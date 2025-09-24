@@ -2,14 +2,14 @@
 Summarizer Agent - Compiles interviews into narratives and outputs
 """
 from agno.agent import Agent
-from agno.models.anthropic import Claude
+from agno.models.openai import OpenAIChat
 from typing import List, Dict, Any
 import json
 
 class SummarizerAgent:
     def __init__(self):
         self.agent = Agent(
-            model=Claude(id="claude-3-5-sonnet-20241022"),
+            model=OpenAIChat(id="gpt-4o"),
             name="Interview Summarizer",
             role="Transform interview content into engaging narratives and summaries",
             instructions=[

@@ -2,14 +2,14 @@
 Planner Agent - Generates seed questions and identifies themes for interviews
 """
 from agno.agent import Agent
-from agno.models.anthropic import Claude
+from agno.models.openai import OpenAIChat
 from typing import List, Dict, Any
 import json
 
 class PlannerAgent:
     def __init__(self):
         self.agent = Agent(
-            model=Claude(id="claude-3-5-sonnet-20241022"),
+            model=OpenAIChat(id="gpt-4o"),
             name="Interview Planner",
             role="Generate thoughtful interview questions and identify emerging themes",
             instructions=[

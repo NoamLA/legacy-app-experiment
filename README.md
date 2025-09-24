@@ -17,7 +17,7 @@ This is a **minimal viable structure** designed for investigating and experiment
 
 - **Frontend**: React.js with Tailwind CSS for modern UI
 - **Backend**: Agno multi-agent system with FastAPI
-- **AI Agents**: 
+- **AI Agents** (powered by OpenAI GPT-4o): 
   - **Planner Agent**: Generates contextual seed questions and identifies themes
   - **Prober Agent**: Creates adaptive follow-up questions during interviews
   - **Summarizer Agent**: Compiles responses into engaging narratives
@@ -31,7 +31,7 @@ This is a **minimal viable structure** designed for investigating and experiment
 pip install -r requirements.txt
 npm install
 
-# 2. Set up environment (add your Anthropic API key)
+# 2. Set up environment (add your OpenAI API key)
 cp .env.example .env
 
 # 3. Start backend (Terminal 1)

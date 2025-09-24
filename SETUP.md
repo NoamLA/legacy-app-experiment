@@ -6,8 +6,7 @@ This guide will help you set up and run the Legacy Interview App for experimenta
 
 - **Python 3.8+** with pip
 - **Node.js 16+** with npm
-- **Anthropic API Key** (for Claude AI agent)
-- **OpenAI API Key** (optional, for Whisper voice transcription)
+- **OpenAI API Key** (for GPT-4o AI agents and optional Whisper voice transcription)
 
 ## Quick Start
 
@@ -121,7 +120,7 @@ Extend `backend/agents/summarizer_agent.py` to add new output formats.
 
 ### Backend Issues
 - **Import Error**: Ensure all requirements are installed: `pip install -r requirements.txt`
-- **API Key Error**: Check that `ANTHROPIC_API_KEY` is set in `.env`
+- **API Key Error**: Check that `OPENAI_API_KEY` is set in `.env`
 - **Port Conflict**: Backend runs on port 8000, ensure it's available
 
 ### Frontend Issues
@@ -132,7 +131,7 @@ Extend `backend/agents/summarizer_agent.py` to add new output formats.
 ### Agent Issues
 - **No Questions Generated**: Check API key and internet connection
 - **Theme Identification Fails**: Ensure at least 5 seed responses are provided
-- **Slow Response**: Claude API calls may take 2-10 seconds
+- **Slow Response**: GPT-4o API calls may take 2-10 seconds
 
 ## Next Steps for Development
 
