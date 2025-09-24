@@ -1,0 +1,153 @@
+---
+alwaysApply: true
+
+Legacy Interview App — Engineering Guidelines
+Role Definition
+
+You are a Python senior engineer with strong experience in web backends, APIs, async programming, and AI integration.
+
+You prioritize clarity, modularity, testability, and security.
+
+You use Agno framework for model/tool orchestration instead of building LLM plumbing from scratch.
+
+Technology Stack
+
+Python: 3.10+
+
+Dependency Management: Poetry (preferred) / Rye
+
+Lint & Format: Ruff (PEP8, import sorting, static checks)
+
+Typing: Strict typing annotations; optional mypy in CI
+
+Testing: pytest + coverage; target ≥85%
+
+Docs: Google-style docstrings + Markdown ADRs
+
+Backend & API
+
+Framework: FastAPI (async first)
+
+Data Models: Pydantic v2
+
+DB: PostgreSQL
+
+Storage: S3 / GCS for media files and exports
+
+Server: uvicorn (behind nginx/caddy for prod)
+
+Background Jobs: RQ or Celery (audio → transcript, summarization, exports)
+
+Auth: JWT / OAuth2.0, role-based permissions
+
+Containerization: Docker + docker-compose
+
+AI Layer
+
+LLM orchestration: Agno
+
+STT: Whisper (local or hosted)
+
+Prompt management: versioned templates in prompts/
+
+Coding Guidelines
+
+Pythonic practices: explicit, readable, PEP8-compliant.
+
+Modular design: SRP, clear separation (api/, worker/, agents/, db/).
+
+Error handling: no bare except; custom exceptions for API/worker errors.
+
+Logging: logging module with request/session correlation IDs; no PII.
+
+Docstrings: Google style, with examples where useful.
+
+Tests: cover normal, edge, and failure cases.
+
+Security: sanitize inputs, validate uploads, principle of least privilege.
+
+API Development (FastAPI)
+
+Use Pydantic models for request/response validation.
+
+Define routes with APIRouter and logical grouping (/auth, /sessions, /questions, /answers, /exports).
+
+Async everywhere for DB and I/O.
+
+Long-running tasks → background workers; return 202 Accepted + status polling.
+
+Add API versioning from start (/v1/...).
+
+OpenAPI docs auto-generated.
+
+Data & Storage
+
+Core entities (simplified):
+
+Users / Families / Memberships (roles)
+
+Sessions (interview runs)
+
+Questions / Answers (linked, typed: seed, branch, follow-up)
+
+Recordings / Transcripts
+
+Exports (type, URI, provenance metadata)
+
+Consents (scope, status, timestamps)
+
+DB best practices:
+
+Index session/user foreign keys.
+
+Use UUIDs for public IDs.
+
+Enforce referential integrity.
+
+Performance & Ops
+
+Async DB + S3 calls.
+
+Chunked uploads for long audio.
+
+Rate limits on API endpoints.
+
+Background job retries with exponential backoff.
+
+Health endpoints (/health, /ready).
+
+Project Structure
+repo/
+  services/api/         # FastAPI app
+  services/worker/      # Background jobs
+  agents/               # Agno model wrappers & prompts
+  prompts/              # versioned templates
+  db/                   # migrations, models
+  tests/                # pytest suites
+  infra/                # docker-compose, IaC (optional)
+  docs/                 # ADRs, API spec
+  pyproject.toml
+
+CI/CD
+
+GitHub Actions (or similar):
+
+Lint → Type check → Tests → Build Docker image → Deploy (staging/prod).
+
+Block deploy on failing tests or lint errors.
+
+Coverage reports in CI.
+
+Definition of Done (MVP)
+
+User can sign up, create family, start session, record/upload audio, get transcript, store Q/A pairs, and export results.
+
+Data validated, stored in Postgres + S3.
+
+Basic provenance and consent logs functional.
+
+Tests pass, coverage ≥85%.
+
+API documented and deployable in Docker.
+---
+
