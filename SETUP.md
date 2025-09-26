@@ -15,30 +15,53 @@ This guide will help you set up and run the Legacy Interview App for experimenta
 ```bash
 cd /Users/noamleviavshalom/legacy
 
-# Copy environment file and add your API keys
-cp .env.example .env
-# Edit .env file with your API keys
+# Copy environment template and add your API keys
+cp .env.template .env
+# Edit .env file with your OpenAI API key - see env-setup.md for details
 ```
 
-### 2. Install Backend Dependencies
+### 2. Run Automated Setup (Recommended)
 
 ```bash
+python setup.py
+```
+
+This will:
+- Create a virtual environment (`legacy-venv/`)
+- Install Python dependencies in the virtual environment
+- Copy environment template to `.env`
+- Check Node.js dependencies
+- Validate your configuration
+
+### 3. Manual Setup (Alternative)
+
+```bash
+# Create virtual environment
+python -m venv legacy-venv
+
+# Activate virtual environment
+source legacy-venv/bin/activate  # Linux/Mac
+# OR
+legacy-venv\Scripts\activate     # Windows
+
+# Install Python dependencies
 pip install -r requirements.txt
-```
 
-### 3. Install Frontend Dependencies
-
-```bash
+# Install Node.js dependencies
 npm install
+
+# Setup environment
+cp .env.template .env
+# Edit .env with your OpenAI API key
 ```
 
 ### 4. Start the Application
 
-**Option A: Start both servers manually**
+**Option A: With Virtual Environment (Recommended)**
 
-Terminal 1 (Backend):
+Terminal 1 (Backend with venv):
 ```bash
-python start-backend.py
+./start-with-venv.sh
 ```
 
 Terminal 2 (Frontend):
@@ -46,7 +69,18 @@ Terminal 2 (Frontend):
 ./start-frontend.sh
 ```
 
-**Option B: Use the provided scripts**
+**Option B: Manual activation**
+
+Terminal 1:
+```bash
+source activate-venv.sh  # Activate venv
+python start-backend.py  # Start backend
+```
+
+Terminal 2:
+```bash
+./start-frontend.sh
+```
 
 The backend will be available at: `http://localhost:8000`
 The frontend will be available at: `http://localhost:3000`

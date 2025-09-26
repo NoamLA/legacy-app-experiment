@@ -28,7 +28,7 @@ const ProjectCreate = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/projects', {
+      const response = await fetch('/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

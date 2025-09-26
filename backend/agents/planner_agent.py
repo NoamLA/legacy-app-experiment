@@ -12,12 +12,29 @@ class PlannerAgent:
             model=OpenAIChat(id="gpt-4o"),
             name="Interview Planner",
             role="Generate thoughtful interview questions and identify emerging themes",
-            instructions=[
-                "You are an expert interview planner specializing in family legacy preservation.",
-                "Generate warm, engaging questions that build rapport while gathering meaningful stories.",
-                "Focus on biographical details, emotional connections, and life-defining moments.",
-                "Keep questions conversational and comfortable for elderly subjects.",
-                "After collecting responses, identify 3-5 major themes for deeper exploration."
+            instructions=["""
+You are a senior interview planner for family legacy biographies. Your goal is to create a real biographical interview that starts gently, builds trust, and elicits rich, story-shaped memories.
+
+Ramped flow: begin with present-day and identity (“today”), then near-past routines and people, then formative periods (adolescence/childhood), then optional sensitive eras the subject explicitly opts into.
+
+Memory cues: favor questions that use concrete anchors:
+
+Sensory (smells, sounds, tastes), Place (home, street, town), Objects (kept items, tools, photos), People (names, roles), Time (seasons, holidays), Activities (work, rituals).
+
+Elder-friendly tone: short sentences, plain language, one idea per question, no stacked sub-questions. Offer choices without forcing recall. Avoid assumptions about countries, eras, or trauma unless the subject has already mentioned them or intake notes say it’s okay.
+
+Comfort first: opening questions must feel safe and familiar (today/this week/home/favorites). Avoid “earliest memory” as a first question.
+
+Cultural and historical sensitivity: when referencing places/periods, use neutral, opt-in frames: “If you’re comfortable, would you like to talk about…?”
+
+Generate 15–20 questions with a smooth progression and include fields for topic, cue type, phase, difficulty, and a gentle “followup_if_short”.
+
+End by proposing 3–5 candidate themes inferred from the questions you plan (e.g., “Home & Belonging,” “Work & Craft,” “Journeys,” “Values & Faith,” “Love & Friendship”).
+
+Output strict JSON: { "questions": [...], "themes": [...] } with the schema provided in the user prompt.
+
+Keep questions conversational, open-ended, and designed for voice answers of 30–120 seconds. 
+"""
             ],
             markdown=True,
         )
@@ -26,24 +43,71 @@ class PlannerAgent:
         """Generate 10-25 warm-up questions based on subject information"""
         
         prompt = f"""
-        Generate 15-20 warm-up questions for a legacy interview with the following subject:
-        
-        Name: {subject_info.get('name', 'Unknown')}
-        Age: {subject_info.get('age', 'Unknown')}
-        Relation: {subject_info.get('relation', 'Unknown')}
-        Background: {subject_info.get('background', 'No additional context')}
-        
-        The questions should:
-        1. Start with easy, comfortable topics
-        2. Build rapport and trust
-        3. Cover key life areas: childhood, family, career, values, memories
-        4. Include some playful/light questions to maintain comfort
-        5. Be open-ended to encourage storytelling
-        
-        Return the questions as a JSON array of strings.
+        You are planning a legacy interview. Use the intake data:
+
+        Name: {subject_info.get('name','Unknown')}
+        Age: {subject_info.get('age','Unknown')}
+        Relation: {subject_info.get('relation','Unknown')}
+        Background notes: {subject_info.get('background','None')}
+        Language: {subject_info.get('language','English')}
+        Sensitive topics to avoid unless explicitly invited: {subject_info.get('sensitive_topics','None')}
+        Key interests or anchors (if any): {subject_info.get('anchors','None')}
+
+        Plan a gentle, elder-friendly **seed interview** that starts present-day and gradually explores the past.
+        Use memory cues (sensory/place/object/people/time/activity). Avoid assumptions about specific countries/eras
+        unless present in background notes. Do **not** start with "earliest memory" or trauma-adjacent prompts.
+
+        **Phases**
+        - Phase 0: Settle-In (2–3 questions): identity, today, comfort.
+        - Phase 1: Home & Daily Life Now (3–4): routines, spaces, people.
+        - Phase 2: Near Past (3–4): recent meaningful events, roles, communities.
+        - Phase 3: Formative Years (4–6): childhood/adolescence with gentle cueing.
+        - Phase 4: Values & Reflections (2–3): lessons, pride, hopes.
+
+        **Cue taxonomy** (choose per question): sensory | place | object | people | time | activity | photo_prompt
+        **Topics** (pick as relevant): identity, home, family, friendship, love, work, craft, migration, faith/culture,
+        service, community, play/hobbies, traditions, turning_points, resilience, humor.
+
+        **Output JSON schema (STRICT)**
+        {{
+        "questions": [
+            {{
+            "text": "string (one question, friendly, no clauses)",
+            "topic": "one_of_topics",
+            "cue_type": "one_of_cues",
+            "phase": "P0|P1|P2|P3|P4",
+            "difficulty": "easy|medium|deeper",
+            "rationale": "1–2 short sentences on why this unlocks memory",
+            "followup_if_short": "gentle nudge if answer is brief",
+            "opt_out_tags": ["sensitive","migration","war"]  // empty if not applicable
+            }}
+        ],
+        "themes": [
+            {{
+            "name": "string",
+            "why": "1–2 sentences",
+            "signals": ["keywords to look for in answers"]
+            }}
+        ]
+        }}
+
+        **Opening examples (style guide)**
+        - Good: "To start, where do you feel most at home these days?"
+        - Good: "What’s a small part of your day that makes you smile?"
+        - Good: "Who do you speak with most in a typical week?"
+        - Good (object cue): "Is there an object at home that you keep within reach because it means something to you?"
+        - Opt-in: "If you’d like, we can talk about big moves or difficult times later. Would that be okay?"
+
+        Generate 15–20 questions spanning P0→P4 with a smooth ramp, and 3–5 candidate themes.
+        Respond **only** with valid JSON matching the schema, no markdown fences.
         """
+
         
+        print(f"🤖 Sending prompt to OpenAI: {prompt[:200]}...")
         response = self.agent.run(prompt)
+        print(f"📥 Raw response from OpenAI: {response}")
+        print(f"📝 Response content: {response.content}")
+        
         try:
             # Extract JSON from the response
             content = response.content
@@ -52,9 +116,26 @@ class PlannerAgent:
             else:
                 json_str = content
             
-            questions = json.loads(json_str)
-            return questions if isinstance(questions, list) else []
-        except:
+            print(f"🔍 Extracted JSON string: {json_str}")
+            parsed_data = json.loads(json_str)
+            print(f"✅ Parsed data: {parsed_data}")
+            
+            # Extract just the question text from the complex structure
+            if isinstance(parsed_data, dict) and 'questions' in parsed_data:
+                questions = [q['text'] for q in parsed_data['questions'] if isinstance(q, dict) and 'text' in q]
+                print(f"📝 Extracted question texts: {questions}")
+                return questions
+            elif isinstance(parsed_data, list):
+                # Handle simple array format
+                questions = parsed_data
+                print(f"📝 Simple questions array: {questions}")
+                return questions
+            else:
+                print(f"❌ Unexpected data structure: {type(parsed_data)}")
+                return []
+        except Exception as e:
+            print(f"❌ JSON parsing failed: {e}")
+            print(f"📄 Raw content was: {content}")
             # Fallback questions if parsing fails
             return [
                 "Tell me about where you were born and what it was like growing up there.",

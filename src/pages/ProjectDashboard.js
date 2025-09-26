@@ -24,7 +24,7 @@ const ProjectDashboard = () => {
 
   const fetchProject = async () => {
     try {
-      const response = await fetch(`/api/projects/${projectId}`);
+      const response = await fetch(`/projects/${projectId}`);
       if (response.ok) {
         const projectData = await response.json();
         setProject(projectData);
@@ -37,7 +37,7 @@ const ProjectDashboard = () => {
 
   const fetchResponses = async () => {
     try {
-      const response = await fetch(`/api/projects/${projectId}/responses`);
+      const response = await fetch(`/projects/${projectId}/responses`);
       if (response.ok) {
         const data = await response.json();
         setResponses(data.responses || []);
@@ -55,7 +55,7 @@ const ProjectDashboard = () => {
 
   const identifyThemes = async () => {
     try {
-      const response = await fetch(`/api/projects/${projectId}/identify-themes`, {
+      const response = await fetch(`/projects/${projectId}/identify-themes`, {
         method: 'POST'
       });
       if (response.ok) {

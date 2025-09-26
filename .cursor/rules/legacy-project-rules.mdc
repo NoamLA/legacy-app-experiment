@@ -44,7 +44,7 @@ Containerization: Docker + docker-compose
 
 AI Layer
 
-LLM orchestration: Agno
+LLM orchestration: Agno use context7
 
 STT: Whisper (local or hosted)
 

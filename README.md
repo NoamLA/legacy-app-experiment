@@ -27,20 +27,20 @@ This is a **minimal viable structure** designed for investigating and experiment
 **See [SETUP.md](SETUP.md) for detailed setup instructions.**
 
 ```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-npm install
+# 1. Automated setup with virtual environment (recommended)
+python setup.py
 
-# 2. Set up environment (add your OpenAI API key)
-cp .env.example .env
+# 2. Start the application
+# Option A: With virtual environment (recommended)
+./start-with-venv.sh          # Backend with venv
+./start-frontend.sh           # Frontend (separate terminal)
 
-# 3. Start backend (Terminal 1)
-python start-backend.py
+# Option B: Manual activation
+source activate-venv.sh       # Activate venv
+python start-backend.py       # Backend
+./start-frontend.sh           # Frontend (separate terminal)
 
-# 4. Start frontend (Terminal 2) 
-./start-frontend.sh
-
-# 5. Visit http://localhost:3000
+# 3. Visit http://localhost:3000
 ```
 
 ## 📁 Project Structure

@@ -2,6 +2,17 @@
 Legacy Interview App - Agno Backend
 Main FastAPI application with multi-agent system
 """
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Enable debug logging
+import logging
+logging.basicConfig(level=logging.DEBUG)
+os.environ['AGNO_LOG_LEVEL'] = 'DEBUG'
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -125,6 +136,13 @@ async def get_seed_questions(project_id: str):
     
     # Generate seed questions using Planner Agent
     questions = planner_agent.generate_seed_questions(project.subject_info)
+    
+    # Debug logging
+    print(f"Generated {len(questions)} questions for project {project_id}")
+    if questions:
+        print(f"First question: {questions[0]}")
+    else:
+        print("No questions generated!")
     
     # Update project status
     projects[project_id].status = "seed_questions"

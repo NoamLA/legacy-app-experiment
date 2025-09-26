@@ -31,7 +31,7 @@ const InterviewFlow = () => {
 
   const fetchProject = async () => {
     try {
-      const response = await fetch(`/api/projects/${projectId}`);
+      const response = await fetch(`/projects/${projectId}`);
       if (response.ok) {
         const projectData = await response.json();
         setProject(projectData);
@@ -43,16 +43,19 @@ const InterviewFlow = () => {
 
   const fetchQuestions = async () => {
     try {
-      let endpoint = `/api/projects/${projectId}/seed-questions`;
+      let endpoint = `/projects/${projectId}/seed-questions`;
       
       if (phase === 'theme' && themeId) {
-        endpoint = `/api/projects/${projectId}/themes/${themeId}/questions`;
+        endpoint = `/projects/${projectId}/themes/${themeId}/questions`;
       }
       
       const response = await fetch(endpoint);
       if (response.ok) {
         const data = await response.json();
-        setQuestions(phase === 'theme' ? data.questions : data.questions);
+        console.log('API Response:', data); // Debug log
+        setQuestions(data.questions || []);
+      } else {
+        console.error('API Error:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -67,7 +70,7 @@ const InterviewFlow = () => {
     setSubmitting(true);
     
     try {
-      const response = await fetch('/api/responses', {
+      const response = await fetch('/responses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

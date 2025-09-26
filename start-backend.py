@@ -25,8 +25,20 @@ def main():
     if not check_requirements():
         sys.exit(1)
     
+    # Load environment variables from .env file
+    from dotenv import load_dotenv
+    load_dotenv()
+    
     # Set environment variables
     os.environ.setdefault('AGNO_TELEMETRY', 'false')
+    
+    # Verify OpenAI API key is loaded
+    if not os.getenv('OPENAI_API_KEY'):
+        print("❌ OPENAI_API_KEY not found in environment variables")
+        print("Please check your .env file contains: OPENAI_API_KEY=your_key_here")
+        sys.exit(1)
+    else:
+        print("✅ OpenAI API key loaded successfully")
     
     # Change to backend directory
     backend_dir = os.path.join(os.path.dirname(__file__), 'backend')
