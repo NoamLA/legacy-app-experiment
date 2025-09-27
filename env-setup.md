@@ -146,3 +146,6 @@ SECRET_KEY=your-secret-key-here
 AGNO_TELEMETRY=false
 DEBUG=true
 ```
+
+---
+**📅 Last Updated:** September 27, 2025

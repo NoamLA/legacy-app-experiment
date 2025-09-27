@@ -3,11 +3,15 @@ Prober Agent - Generates adaptive follow-up questions during interviews
 """
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
+from agno.db.in_memory import InMemoryDb
 from typing import List, Dict, Any
 import json
 
 class ProberAgent:
     def __init__(self):
+        # Initialize with Agno's proper session management
+        self.db = InMemoryDb()
+        
         self.agent = Agent(
             model=OpenAIChat(id="gpt-4o"),
             name="Interview Prober",
@@ -18,16 +22,23 @@ class ProberAgent:
                 "Balance factual details with emotional reflection.",
                 "Maintain a warm, curious tone that encourages sharing.",
                 "Occasionally inject playful or lighter questions to keep the conversation comfortable.",
-                "Help subjects reflect on the significance of their experiences."
+                "Help subjects reflect on the significance of their experiences.",
+                "Consider the full context of previous questions and responses when generating follow-ups."
             ],
             markdown=True,
+            # Enable Agno's built-in session management
+            db=self.db,
+            add_history_to_context=True,  # Include conversation history in context
+            num_history_runs=5,  # Include last 5 exchanges for context
+            enable_user_memories=True,  # Remember facts about subjects
         )
     
     def generate_followup_questions(
         self, 
         original_question: str, 
         response: str, 
-        context: Dict[str, Any] = None
+        context: Dict[str, Any] = None,
+        project_id: str = None
     ) -> List[str]:
         """Generate 2-3 follow-up questions based on the response"""
         
@@ -63,7 +74,17 @@ class ProberAgent:
         Return as a JSON array of strings.
         """
         
-        response_obj = self.agent.run(prompt)
+        # Use project_id as session_id for continuity
+        session_id = f"prober_{project_id}" if project_id else "default_prober"
+        user_id = f"subject_{project_id}" if project_id else "default_subject"
+        
+        print(f"🔍 Generating follow-up questions using session_id: {session_id}")
+        
+        response_obj = self.agent.run(
+            prompt,
+            session_id=session_id,
+            user_id=user_id
+        )
         try:
             content = response_obj.content
             if "```json" in content:
@@ -105,7 +126,7 @@ class ProberAgent:
         
         return fallback_questions[:3]  # Return max 3 questions
     
-    def suggest_reflection_questions(self, interview_summary: str) -> List[str]:
+    def suggest_reflection_questions(self, interview_summary: str, project_id: str = None) -> List[str]:
         """Generate reflective questions based on the interview so far"""
         
         prompt = f"""
@@ -124,7 +145,17 @@ class ProberAgent:
         Return as a JSON array of strings.
         """
         
-        response = self.agent.run(prompt)
+        # Use project_id as session_id for continuity
+        session_id = f"prober_{project_id}" if project_id else "default_prober"
+        user_id = f"subject_{project_id}" if project_id else "default_subject"
+        
+        print(f"💭 Generating reflection questions using session_id: {session_id}")
+        
+        response = self.agent.run(
+            prompt,
+            session_id=session_id,
+            user_id=user_id
+        )
         try:
             content = response.content
             if "```json" in content:
@@ -142,7 +173,7 @@ class ProberAgent:
                 "What wisdom would you want to pass on?"
             ]
     
-    def adapt_question_style(self, subject_profile: Dict[str, Any], base_question: str) -> str:
+    def adapt_question_style(self, subject_profile: Dict[str, Any], base_question: str, project_id: str = None) -> str:
         """Adapt question style based on subject's personality and preferences"""
         
         prompt = f"""
@@ -160,5 +191,15 @@ class ProberAgent:
         Return just the adapted question as a string.
         """
         
-        response = self.agent.run(prompt)
+        # Use project_id as session_id for continuity
+        session_id = f"prober_{project_id}" if project_id else "default_prober"
+        user_id = f"subject_{project_id}" if project_id else "default_subject"
+        
+        print(f"🎨 Adapting question style using session_id: {session_id}")
+        
+        response = self.agent.run(
+            prompt,
+            session_id=session_id,
+            user_id=user_id
+        )
         return response.content.strip().strip('"')

@@ -3,11 +3,15 @@ Summarizer Agent - Compiles interviews into narratives and outputs
 """
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
+from agno.db.in_memory import InMemoryDb
 from typing import List, Dict, Any
 import json
 
 class SummarizerAgent:
     def __init__(self):
+        # Initialize with Agno's proper session management
+        self.db = InMemoryDb()
+        
         self.agent = Agent(
             model=OpenAIChat(id="gpt-4o"),
             name="Interview Summarizer",
@@ -18,12 +22,18 @@ class SummarizerAgent:
                 "Preserve the subject's voice and personality in your writing.",
                 "Create different types of outputs: timelines, thematic stories, and highlight quotes.",
                 "Focus on the human story, not just facts and dates.",
-                "Write with warmth, respect, and authenticity."
+                "Write with warmth, respect, and authenticity.",
+                "Consider the full context of all previous conversations when creating summaries."
             ],
             markdown=True,
+            # Enable Agno's built-in session management
+            db=self.db,
+            add_history_to_context=True,  # Include conversation history in context
+            num_history_runs=10,  # Include more history for comprehensive summaries
+            enable_user_memories=True,  # Remember facts about subjects
         )
     
-    def create_timeline_narrative(self, interview_data: List[Dict[str, Any]]) -> str:
+    def create_timeline_narrative(self, interview_data: List[Dict[str, Any]], project_id: str = None) -> str:
         """Create a chronological life story from interview responses"""
         
         # Organize responses by life periods
@@ -51,10 +61,20 @@ class SummarizerAgent:
         Use third person narrative style.
         """
         
-        response = self.agent.run(prompt)
+        # Use project_id as session_id for continuity
+        session_id = f"summarizer_{project_id}" if project_id else "default_summarizer"
+        user_id = f"subject_{project_id}" if project_id else "default_subject"
+        
+        print(f"🎨 Creating thematic story using session_id: {session_id}")
+        
+        response = self.agent.run(
+            prompt,
+            session_id=session_id,
+            user_id=user_id
+        )
         return response.content
     
-    def create_thematic_story(self, theme: str, related_responses: List[Dict[str, Any]]) -> str:
+    def create_thematic_story(self, theme: str, related_responses: List[Dict[str, Any]], project_id: str = None) -> str:
         """Create a focused story around a specific theme"""
         
         responses_text = self._format_responses_for_analysis(related_responses)
@@ -74,10 +94,20 @@ class SummarizerAgent:
         Write in an engaging, story-like format that could stand alone as a chapter.
         """
         
-        response = self.agent.run(prompt)
+        # Use project_id as session_id for continuity
+        session_id = f"summarizer_{project_id}" if project_id else "default_summarizer"
+        user_id = f"subject_{project_id}" if project_id else "default_subject"
+        
+        print(f"🎨 Creating thematic story using session_id: {session_id}")
+        
+        response = self.agent.run(
+            prompt,
+            session_id=session_id,
+            user_id=user_id
+        )
         return response.content
     
-    def extract_memorable_quotes(self, interview_data: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+    def extract_memorable_quotes(self, interview_data: List[Dict[str, Any]], project_id: str = None) -> List[Dict[str, str]]:
         """Extract the most memorable and meaningful quotes from interviews"""
         
         responses_text = self._format_responses_for_analysis(interview_data)
@@ -147,7 +177,17 @@ class SummarizerAgent:
         Structure it as a 15-20 minute podcast episode.
         """
         
-        response = self.agent.run(prompt)
+        # Use project_id as session_id for continuity
+        session_id = f"summarizer_{project_id}" if project_id else "default_summarizer"
+        user_id = f"subject_{project_id}" if project_id else "default_subject"
+        
+        print(f"🎨 Creating thematic story using session_id: {session_id}")
+        
+        response = self.agent.run(
+            prompt,
+            session_id=session_id,
+            user_id=user_id
+        )
         return response.content
     
     def create_web_page_content(self, interview_data: List[Dict[str, Any]]) -> Dict[str, str]:

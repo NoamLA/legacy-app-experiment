@@ -24,6 +24,7 @@ from datetime import datetime
 from agents.planner_agent import PlannerAgent
 from agents.prober_agent import ProberAgent
 from agents.summarizer_agent import SummarizerAgent
+from agents.subject_simulator_agent import SubjectSimulatorAgent
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -45,11 +46,36 @@ app.add_middleware(
 planner_agent = PlannerAgent()
 prober_agent = ProberAgent()
 summarizer_agent = SummarizerAgent()
+subject_simulator = SubjectSimulatorAgent()  # For testing only
 
 # In-memory storage (replace with database in production)
 projects = {}
 interviews = {}
 responses = {}
+
+# Sample data initialization function (defined here, called later after classes are defined)
+def initialize_sample_data():
+    """Initialize sample project data for development testing"""
+    sample_project_id = "4bc45289-0948-4c14-8be9-f4b91ce50428"
+    if sample_project_id not in projects:
+        projects[sample_project_id] = Project(
+            id=sample_project_id,
+            name="Grandma Rose's Story",
+            subject_info={
+                "name": "Rose Martinez",
+                "age": 82,
+                "relation": "grandmother",
+                "background": "Born in Mexico, immigrated to California in the 1960s. Raised 5 children while working as a seamstress.",
+                "language": "English"
+            },
+            interview_mode="family",
+            language="en",
+            status="created",
+            created_at=datetime.now(),
+            themes=[],
+            responses=[]
+        )
+        print(f"✅ Initialized sample project: {sample_project_id}")
 
 # Pydantic models
 class ProjectCreate(BaseModel):
@@ -70,6 +96,8 @@ class Project(BaseModel):
     status: str  # "created", "seed_questions", "themes_identified", "deep_dive", "completed"
     created_at: datetime
     themes: List[Dict[str, Any]] = []
+    responses: List[Dict[str, str]] = []  # Store interview responses
+    seed_questions: List[str] = []  # Cache generated seed questions
 
 class ResponseSubmit(BaseModel):
     project_id: str
@@ -87,6 +115,14 @@ class InterviewResponse(BaseModel):
     theme_id: Optional[str]
     timestamp: datetime
     followup_questions: List[str] = []
+
+class SimulatorRequest(BaseModel):
+    project_id: str
+    question: str
+    context: Optional[Dict[str, Any]] = {}
+
+# Initialize sample data after all classes are defined
+initialize_sample_data()
 
 # API Endpoints
 
@@ -128,26 +164,51 @@ async def get_project(project_id: str):
 
 @app.get("/projects/{project_id}/seed-questions")
 async def get_seed_questions(project_id: str):
-    """Generate seed questions for a project"""
+    """Get or generate seed questions for a project"""
     if project_id not in projects:
         raise HTTPException(status_code=404, detail="Project not found")
     
     project = projects[project_id]
     
-    # Generate seed questions using Planner Agent
-    questions = planner_agent.generate_seed_questions(project.subject_info)
-    
-    # Debug logging
-    print(f"Generated {len(questions)} questions for project {project_id}")
-    if questions:
-        print(f"First question: {questions[0]}")
+    # Check if questions are already cached for this project
+    if hasattr(project, 'seed_questions') and project.seed_questions:
+        questions = project.seed_questions
+        print(f"Using cached {len(questions)} questions for project {project_id}")
     else:
-        print("No questions generated!")
+        # Generate seed questions using Planner Agent (only first time)
+        questions = planner_agent.generate_seed_questions(project.subject_info, project_id)
+        
+        # Cache the questions in the project
+        project.seed_questions = questions
+        
+        # Debug logging
+        print(f"Generated and cached {len(questions)} questions for project {project_id}")
+        if questions:
+            print(f"First question: {questions[0]}")
+        else:
+            print("No questions generated!")
     
     # Update project status
     projects[project_id].status = "seed_questions"
     
     return {"questions": questions, "total": len(questions)}
+
+@app.post("/projects/{project_id}/seed-questions/regenerate")
+async def regenerate_seed_questions(project_id: str):
+    """Force regeneration of seed questions for a project"""
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    project = projects[project_id]
+    
+    # Clear cached questions and regenerate
+    project.seed_questions = []
+    questions = planner_agent.generate_seed_questions(project.subject_info, project_id)
+    project.seed_questions = questions
+    
+    print(f"Regenerated {len(questions)} questions for project {project_id}")
+    
+    return {"questions": questions, "total": len(questions), "regenerated": True}
 
 @app.post("/responses", response_model=InterviewResponse)
 async def submit_response(response_data: ResponseSubmit):
@@ -292,6 +353,56 @@ async def export_project(project_id: str, export_type: str):
     }
     
     return export_data
+
+# Testing endpoints - Subject Simulator
+@app.post("/simulator/generate-response")
+async def generate_simulator_response(request: SimulatorRequest):
+    """Generate an authentic response from the subject simulator (for testing)"""
+    if request.project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    project = projects[request.project_id]
+    
+    # Set up the character profile for the simulator
+    subject_simulator.set_character_profile(project.subject_info)
+    
+    # Generate authentic response using Agno's session management
+    response = subject_simulator.generate_authentic_response(
+        request.question, 
+        request.context,
+        project_id=request.project_id
+    )
+    
+    # Get conversation count from Agno's session management
+    try:
+        messages = subject_simulator.agent.get_messages_for_session()
+        conversation_count = len(messages) // 2  # Divide by 2 since each exchange has user + assistant message
+    except Exception as e:
+        print(f"⚠️ Could not get message count: {e}")
+        conversation_count = 0
+    
+    return {
+        "generated_answer": response,
+        "character_profile": subject_simulator.established_facts,
+        "conversation_count": conversation_count
+    }
+
+@app.get("/simulator/conversation-summary/{project_id}")
+async def get_simulator_conversation_summary(project_id: str):
+    """Get conversation summary from the simulator using Agno sessions"""
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    return subject_simulator.get_conversation_summary(project_id=project_id)
+
+@app.post("/simulator/reset/{project_id}")
+async def reset_simulator_conversation(project_id: str):
+    """Reset the simulator's conversation history using Agno sessions"""
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    subject_simulator.reset_conversation(project_id=project_id)
+    return {"message": f"Simulator conversation reset for project {project_id}"}
 
 if __name__ == "__main__":
     import uvicorn

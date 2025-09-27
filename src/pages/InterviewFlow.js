@@ -23,9 +23,13 @@ const InterviewFlow = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isGeneratingResponse, setIsGeneratingResponse] = useState(false);
 
   useEffect(() => {
     fetchProject();
+  }, [projectId]);
+
+  useEffect(() => {
     fetchQuestions();
   }, [projectId, phase, themeId]);
 
@@ -133,6 +137,42 @@ const InterviewFlow = () => {
     }
   };
 
+  // Generate AI response for testing
+  const generateAgentResponse = async () => {
+    if (!currentQuestion) return;
+    
+    setIsGeneratingResponse(true);
+    
+    try {
+      const response = await fetch('/simulator/generate-response', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          project_id: projectId,
+          question: currentQuestion,
+          context: {
+            phase: phase,
+            theme_id: themeId,
+            timestamp: new Date().toISOString()
+          }
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentAnswer(data.generated_answer);
+      } else {
+        console.error('Failed to generate agent response');
+      }
+    } catch (error) {
+      console.error('Error generating agent response:', error);
+    } finally {
+      setIsGeneratingResponse(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-64">
@@ -216,8 +256,8 @@ const InterviewFlow = () => {
             />
           </div>
 
-          {/* Voice Recording Button */}
-          <div className="flex justify-center">
+          {/* Voice Recording and Agent Response Buttons */}
+          <div className="flex justify-center space-x-4">
             <button
               onClick={toggleRecording}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
@@ -234,7 +274,26 @@ const InterviewFlow = () => {
               ) : (
                 <>
                   <MicrophoneIcon className="w-5 h-5" />
-                  <span>Record Voice Response</span>
+                  <span>Record Voice</span>
+                </>
+              )}
+            </button>
+
+            {/* Agent Answer Button - For Testing */}
+            <button
+              onClick={generateAgentResponse}
+              disabled={isGeneratingResponse}
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-100 text-purple-700 hover:bg-purple-200 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {isGeneratingResponse ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <span className="w-5 h-5 flex items-center justify-center">🤖</span>
+                  <span>Agent Answer</span>
                 </>
               )}
             </button>
@@ -288,6 +347,15 @@ const InterviewFlow = () => {
         </div>
       </div>
 
+      {/* Testing Mode Indicator */}
+      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+        <h3 className="font-medium text-purple-900 mb-2">🧪 Testing Mode Active</h3>
+        <p className="text-sm text-purple-800">
+          Use the <strong>"Agent Answer"</strong> button to generate authentic AI responses for testing the complete interview flow.
+          The AI will simulate realistic human answers based on the project's character profile.
+        </p>
+      </div>
+
       {/* Tips */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 className="font-medium text-blue-900 mb-2">💡 Interview Tips</h3>
@@ -296,6 +364,7 @@ const InterviewFlow = () => {
           <li>• Share specific stories and details</li>
           <li>• It's okay to skip questions that don't resonate</li>
           <li>• Use the voice recorder if you prefer speaking</li>
+          <li>• <strong>Testing:</strong> Click "Agent Answer" to simulate responses</li>
         </ul>
       </div>
     </div>

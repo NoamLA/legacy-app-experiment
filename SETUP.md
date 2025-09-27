@@ -23,7 +23,8 @@ cp .env.template .env
 ### 2. Run Automated Setup (Recommended)
 
 ```bash
-python setup.py
+# Install dependencies (includes testing dependencies)
+./scripts/install-dependencies.sh
 ```
 
 This will:
@@ -61,25 +62,25 @@ cp .env.template .env
 
 Terminal 1 (Backend with venv):
 ```bash
-./start-with-venv.sh
+./scripts/start-with-venv.sh
 ```
 
 Terminal 2 (Frontend):
 ```bash
-./start-frontend.sh
+./scripts/start-frontend.sh
 ```
 
 **Option B: Manual activation**
 
 Terminal 1:
 ```bash
-source activate-venv.sh  # Activate venv
-python start-backend.py  # Start backend
+source legacy-venv/bin/activate  # Activate venv
+python ./scripts/start-backend.py  # Start backend
 ```
 
 Terminal 2:
 ```bash
-./start-frontend.sh
+./scripts/start-frontend.sh
 ```
 
 The backend will be available at: `http://localhost:8000`
@@ -169,11 +170,12 @@ Extend `backend/agents/summarizer_agent.py` to add new output formats.
 
 ## Next Steps for Development
 
-1. **Database Integration**: Replace in-memory storage with SQLite/PostgreSQL
-2. **Authentication**: Add user accounts and family group management  
-3. **Voice Recording**: Integrate real speech-to-text functionality
-4. **Export Features**: Add PDF, audio, and video export capabilities
-5. **Collaboration**: Implement real-time family member assignment and notifications
+1. **Database Integration**: ✅ PostgreSQL ready for production (currently using InMemoryDb for development)
+2. **Testing**: ✅ Comprehensive test suite available (`./scripts/run-tests.sh`)
+3. **Authentication**: Add user accounts and family group management  
+4. **Voice Recording**: Integrate real speech-to-text functionality
+5. **Export Features**: Add PDF, audio, and video export capabilities
+6. **Collaboration**: Implement real-time family member assignment and notifications
 
 ## Support
 
@@ -183,3 +185,6 @@ For issues with:
 - **API Integration**: Use the built-in API docs at `/docs`
 
 This lean structure provides a solid foundation for experimenting with the Legacy Interview App concept while keeping the codebase manageable and extensible.
+
+---
+**📅 Last Updated:** September 27, 2025

@@ -50,6 +50,10 @@ Thumbs.db
 .env.development.local
 .env.test.local
 .env.production.local
+.env.development
+.env.production
+.env.test
+.env.ci
 
 # Logs
 npm-debug.log*

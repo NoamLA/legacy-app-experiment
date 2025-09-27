@@ -2,6 +2,9 @@
 
 A lean, experimental storytelling and memory-preservation platform that captures personal legacies through AI-driven, collaborative interviews using Agno's multi-agent system.
 
+## 🚨 Production Deployment Note
+**IMPORTANT:** Before deploying to production, read `PRODUCTION_DEPLOYMENT.md` for critical database migration steps (InMemoryDb → PostgreSQL).
+
 ## 🎯 Purpose
 
 This is a **minimal viable structure** designed for investigating and experimenting with the Legacy Interview App flow and AI agents. It provides a working foundation to test core concepts before building the full production system.
@@ -27,20 +30,23 @@ This is a **minimal viable structure** designed for investigating and experiment
 **See [SETUP.md](SETUP.md) for detailed setup instructions.**
 
 ```bash
-# 1. Automated setup with virtual environment (recommended)
-python setup.py
+# 1. Install dependencies (includes testing framework)
+./scripts/install-dependencies.sh
 
 # 2. Start the application
 # Option A: With virtual environment (recommended)
-./start-with-venv.sh          # Backend with venv
-./start-frontend.sh           # Frontend (separate terminal)
+./scripts/start-with-venv.sh     # Backend with venv
+./scripts/start-frontend.sh      # Frontend (separate terminal)
 
 # Option B: Manual activation
-source activate-venv.sh       # Activate venv
-python start-backend.py       # Backend
-./start-frontend.sh           # Frontend (separate terminal)
+source legacy-venv/bin/activate  # Activate venv
+python ./scripts/start-backend.py # Backend
+./scripts/start-frontend.sh      # Frontend (separate terminal)
 
 # 3. Visit http://localhost:3000
+
+# 4. Run tests (optional)
+./scripts/run-tests.sh fast      # Quick tests
 ```
 
 ## 📁 Project Structure
@@ -85,12 +91,18 @@ legacy/
 - **Export Formats**: Add new output types in `summarizer_agent.py`
 - **Interview Modes**: Extend family collaboration features
 
-## 🎯 Next Development Steps
+## 🎯 Current Status & Next Steps
 
-This lean structure is designed to validate core concepts. Based on experimentation results:
+### ✅ **Completed Features:**
+- **Multi-Agent System**: Planner, Prober, Summarizer, and Subject Simulator agents
+- **Database Infrastructure**: PostgreSQL with multi-environment support (CI/Test/Production)
+- **Testing Framework**: Comprehensive test suite with 60%+ pass rate
+- **Repository Organization**: Well-structured codebase with proper documentation
+- **Development Environment**: Optimized InMemoryDb for fast development
 
+### 🔄 **Next Development Steps:**
 1. **Enhanced AI Agents**: Refine question generation and theme detection
-2. **Database Integration**: Replace in-memory storage with persistent data
+2. **Production Migration**: Switch to PostgreSQL for production deployment (see `PRODUCTION_DEPLOYMENT.md`)
 3. **Voice Integration**: Add real speech-to-text capabilities  
 4. **Family Collaboration**: Build real-time assignment and notification system
 5. **Export Pipeline**: Create production-ready podcast, PDF, and web outputs
@@ -99,6 +111,9 @@ This lean structure is designed to validate core concepts. Based on experimentat
 ## 📚 Documentation
 
 - **Setup Guide**: [SETUP.md](SETUP.md) - Detailed installation and testing instructions
+- **Testing Guide**: [TESTING.md](TESTING.md) - Comprehensive testing framework and usage
+- **Production Deployment**: [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md) - Critical database migration guide
+- **Project Structure**: [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) - Repository organization
 - **API Documentation**: Available at `http://localhost:8000/docs` when backend is running
 - **Agno Framework**: [docs.agno.com](https://docs.agno.com) for agent development
 
@@ -112,3 +127,6 @@ Use this lean structure to:
 - Assess the overall concept viability before full development
 
 This foundation provides everything needed to investigate the Legacy Interview App concept while maintaining a clean, extensible codebase.
+
+---
+**📅 Last Updated:** September 27, 2025
