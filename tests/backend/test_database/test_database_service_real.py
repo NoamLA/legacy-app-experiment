@@ -10,6 +10,7 @@ from datetime import datetime
 from unittest.mock import Mock, patch
 import sys
 from pathlib import Path
+from sqlalchemy import text
 
 # Add backend and database to path
 backend_path = Path(__file__).parent.parent.parent.parent / "backend"
@@ -110,7 +111,7 @@ class TestDatabaseServiceIntegration:
         # Clean database before test
         with service.get_db_session() as session:
             if session:
-                session.execute("TRUNCATE TABLE projects CASCADE")
+                session.execute(text("TRUNCATE TABLE projects CASCADE"))
                 session.commit()
         
         yield service
@@ -118,7 +119,7 @@ class TestDatabaseServiceIntegration:
         # Clean up after test
         with service.get_db_session() as session:
             if session:
-                session.execute("TRUNCATE TABLE projects CASCADE")
+                session.execute(text("TRUNCATE TABLE projects CASCADE"))
                 session.commit()
     
     @pytest.mark.database

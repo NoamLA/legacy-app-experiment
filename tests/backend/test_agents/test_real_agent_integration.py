@@ -10,6 +10,7 @@ import json
 from unittest.mock import patch, Mock
 import sys
 from pathlib import Path
+from sqlalchemy import text
 
 # Add backend and database to path
 backend_path = Path(__file__).parent.parent.parent.parent / "backend"
@@ -49,19 +50,19 @@ class TestRealAgentIntegration:
         """Clean agent database tables before each test"""
         with test_db_manager.get_session() as session:
             # Clean Agno tables
-            session.execute("TRUNCATE TABLE agent_sessions CASCADE")
-            session.execute("TRUNCATE TABLE agent_messages CASCADE")
-            session.execute("TRUNCATE TABLE agent_runs CASCADE")
-            session.execute("TRUNCATE TABLE user_memories CASCADE")
-            session.execute("TRUNCATE TABLE session_summaries CASCADE")
+            session.execute(text("TRUNCATE TABLE agent_sessions CASCADE"))
+            session.execute(text("TRUNCATE TABLE agent_messages CASCADE"))
+            session.execute(text("TRUNCATE TABLE agent_runs CASCADE"))
+            session.execute(text("TRUNCATE TABLE user_memories CASCADE"))
+            session.execute(text("TRUNCATE TABLE session_summaries CASCADE"))
             session.commit()
             yield
             # Clean up after test
-            session.execute("TRUNCATE TABLE agent_sessions CASCADE")
-            session.execute("TRUNCATE TABLE agent_messages CASCADE")
-            session.execute("TRUNCATE TABLE agent_runs CASCADE")
-            session.execute("TRUNCATE TABLE user_memories CASCADE")
-            session.execute("TRUNCATE TABLE session_summaries CASCADE")
+            session.execute(text("TRUNCATE TABLE agent_sessions CASCADE"))
+            session.execute(text("TRUNCATE TABLE agent_messages CASCADE"))
+            session.execute(text("TRUNCATE TABLE agent_runs CASCADE"))
+            session.execute(text("TRUNCATE TABLE user_memories CASCADE"))
+            session.execute(text("TRUNCATE TABLE session_summaries CASCADE"))
             session.commit()
     
     @pytest.fixture
