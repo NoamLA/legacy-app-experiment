@@ -17,20 +17,24 @@ class Project(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
-    subject_name = Column(String(255), nullable=False)
-    subject_age = Column(Integer)
-    relation = Column(String(100), nullable=False)
-    background = Column(Text)
+    subject_info = Column(JSONB, nullable=False)  # Contains name, age, relation, background, language
     interview_mode = Column(String(20), nullable=False)
     language = Column(String(10), nullable=False, default='en')
     status = Column(String(50), nullable=False, default='created')
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # New fields to match actual API usage
+    themes = Column(JSONB, default=[])  # Legacy theme format
+    enhanced_themes = Column(JSONB, default=[])  # New enhanced theme format
+    participants = Column(JSONB, default=[])  # Project participants
+    admin_id = Column(String(255))  # Project administrator ID
+    seed_questions = Column(JSONB, default=[])  # Cached generated questions
     extra_metadata = Column(JSONB, default={})
     
     # Relationships
     responses = relationship("InterviewResponse", back_populates="project", cascade="all, delete-orphan")
-    themes = relationship("InterviewTheme", back_populates="project", cascade="all, delete-orphan")
+    theme_records = relationship("InterviewTheme", back_populates="project", cascade="all, delete-orphan")
     documents = relationship("KnowledgeDocument", back_populates="project", cascade="all, delete-orphan")
     
     def to_dict(self):
@@ -38,18 +42,16 @@ class Project(Base):
         return {
             'id': str(self.id),
             'name': self.name,
-            'subject_info': {
-                'name': self.subject_name,
-                'age': self.subject_age,
-                'relation': self.relation,
-                'background': self.background,
-                'language': self.language
-            },
+            'subject_info': self.subject_info,
             'interview_mode': self.interview_mode,
             'language': self.language,
             'status': self.status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'themes': [theme.to_dict() for theme in self.themes],
+            'themes': self.themes,
+            'enhanced_themes': self.enhanced_themes,
+            'participants': self.participants,
+            'admin_id': self.admin_id,
+            'seed_questions': self.seed_questions,
             'responses': [resp.to_dict() for resp in self.responses],
             'metadata': self.extra_metadata
         }
@@ -100,7 +102,7 @@ class InterviewTheme(Base):
     extra_metadata = Column(JSONB, default={})
     
     # Relationships
-    project = relationship("Project", back_populates="themes")
+    project = relationship("Project", back_populates="theme_records")
     responses = relationship("InterviewResponse", back_populates="theme")
     
     def to_dict(self):

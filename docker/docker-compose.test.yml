@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Test PostgreSQL database - isolated from development
+  test-postgres:
+    image: postgres:16
+    container_name: legacy_test_postgres
+    environment:
+      POSTGRES_DB: legacy_interview_test
+      POSTGRES_USER: legacy_test_user
+      POSTGRES_PASSWORD: legacy_test_pass
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5434:5432"  # Different port from development
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+      - ../database/schema_corrected.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U legacy_test_user -d legacy_interview_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # Test database with extensions (for CI/integration tests)
+  test-postgres-with-extensions:
+    image: pgvector/pgvector:pg16
+    container_name: legacy_test_postgres_full
+    environment:
+      POSTGRES_DB: legacy_interview_test_full
+      POSTGRES_USER: legacy_test_user
+      POSTGRES_PASSWORD: legacy_test_pass
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5435:5432"  # Another port for full-featured testing
+    volumes:
+      - test_postgres_full_data:/var/lib/postgresql/data
+      - ../database/schema.sql:/docker-entrypoint-initdb.d/01-schema-full.sql  # Original schema with pgvector
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U legacy_test_user -d legacy_interview_test_full"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+volumes:
+  test_postgres_data:
+  test_postgres_full_data:
+
+networks:
+  test-network:
+    driver: bridge

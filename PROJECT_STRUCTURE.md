@@ -65,23 +65,37 @@ legacy/
 │   ├── postcss.config.js
 │   └── tailwind.config.js
 │
-├── 🧪 TESTS (to be created)
+├── 🧪 TESTS
 │   ├── backend/
 │   │   ├── __init__.py
+│   │   ├── conftest.py              # Pytest configuration (unit tests)
+│   │   ├── conftest_real_db.py      # Real database test configuration
 │   │   ├── test_agents/             # Agent testing
+│   │   │   ├── test_planner_agent.py        # Unit tests (mocked)
+│   │   │   ├── test_prober_agent.py         # Unit tests (mocked)
+│   │   │   ├── test_summarizer_agent.py     # Unit tests (mocked)
+│   │   │   └── test_real_agent_integration.py # Real integration tests
 │   │   ├── test_database/           # Database testing
-│   │   ├── test_api/                # API endpoint testing
-│   │   └── conftest.py              # Pytest configuration
+│   │   │   ├── test_config.py               # Unit tests (mocked)
+│   │   │   ├── test_memory_functionality.py # Unit tests (mocked)
+│   │   │   ├── test_real_database_integration.py # Real PostgreSQL tests
+│   │   │   └── test_database_service_real.py # Database service integration
+│   │   └── test_api/                # API endpoint testing (future)
 │   ├── frontend/
 │   │   └── __tests__/               # React component tests
 │   └── integration/                 # End-to-end tests
 │
 ├── 🚀 DEPLOYMENT & SCRIPTS
-│   ├── scripts/                     # Utility scripts (to be created)
+│   ├── scripts/                     # Utility scripts
 │   │   ├── start-backend.py
 │   │   ├── start-frontend.sh
-│   │   └── start-with-venv.sh
-│   ├── docker/                      # Docker configurations (to be created)
+│   │   ├── start-with-venv.sh
+│   │   ├── run-tests.sh             # Comprehensive test runner
+│   │   ├── run-real-database-tests.sh # Real database test runner
+│   │   ├── setup-test-database.sh   # Docker PostgreSQL setup
+│   │   └── install-dependencies.sh
+│   ├── docker/                      # Docker configurations
+│   │   └── docker-compose.test.yml  # Test database setup
 │   └── .github/                     # GitHub Actions (to be created)
 │       └── workflows/
 │
@@ -108,12 +122,14 @@ legacy/
 
 ### 2. **✅ Testing Structure**
 - ✅ Created comprehensive test suite with pytest
-- ✅ Separated unit, integration, and slow tests with markers
+- ✅ Separated unit, integration, database, and performance tests with markers
 - ✅ Added test configuration with `pytest.ini`
-- ✅ Created tests for question generation (`test_planner_agent.py`)
-- ✅ Created tests for follow-up questions (`test_prober_agent.py`) 
-- ✅ Created tests for summarization (`test_summarizer_agent.py`)
-- ✅ Created tests for database/memory functionality (`test_config.py`, `test_memory_functionality.py`)
+- ✅ Created unit tests with mocks for all agents
+- ✅ Created real database integration tests using Docker PostgreSQL
+- ✅ Created performance tests for database operations
+- ✅ Added multi-agent integration tests with real persistence
+- ✅ Created comprehensive test runners (`run-tests.sh`, `run-real-database-tests.sh`)
+- ✅ Added Docker-based test database setup (`docker-compose.test.yml`)
 - ✅ Added testing dependencies to `requirements.txt`
 
 ### 3. **✅ Multi-Environment Database**
@@ -141,22 +157,30 @@ legacy/
 ## 🧪 **Testing Commands**
 
 ```bash
-# Run all tests
-./scripts/run-tests.sh
-
-# Run specific test types
-./scripts/run-tests.sh unit          # Fast unit tests only
-./scripts/run-tests.sh integration   # Integration tests only
+# Run different test types
+./scripts/run-tests.sh unit          # Fast unit tests (mocked)
+./scripts/run-tests.sh database      # Real PostgreSQL database tests
+./scripts/run-tests.sh real          # All real integration tests (no mocks)
+./scripts/run-tests.sh performance   # Performance and load tests
+./scripts/run-tests.sh all           # Complete test suite
 ./scripts/run-tests.sh agents        # Agent tests only
-./scripts/run-tests.sh database      # Database tests only
-./scripts/run-tests.sh fast          # Fast tests (no slow/integration)
-./scripts/run-tests.sh coverage      # Tests with coverage report
+
+# Test options
+./scripts/run-tests.sh database --verbose    # Verbose output
+./scripts/run-tests.sh all --coverage        # With coverage report
+./scripts/run-tests.sh unit --parallel       # Parallel execution
+./scripts/run-tests.sh database --clean-db   # Clean database before tests
+
+# Database test setup
+./scripts/setup-test-database.sh             # Set up Docker PostgreSQL
+./scripts/run-real-database-tests.sh         # Comprehensive database tests
 
 # Manual pytest commands
-pytest tests/ -m unit                # Unit tests
-pytest tests/ -m "not slow"          # Exclude slow tests
-pytest tests/backend/test_agents/    # Agent tests only
-pytest tests/ --cov=backend         # With coverage
+pytest tests/ -m "unit and not database"     # Unit tests only
+pytest tests/ -m "database"                  # Database tests only
+pytest tests/ -m "real_integration"          # Real integration tests
+pytest tests/ -m "performance"               # Performance tests
+pytest tests/ --cov=backend --cov=database  # With coverage
 ```
 
 ---

@@ -13,6 +13,11 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 os.environ['AGNO_LOG_LEVEL'] = 'DEBUG'
 
+import sys
+import os
+# Add the parent directory to Python path so we can import from database/
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -25,6 +30,7 @@ from agents.planner_agent import PlannerAgent
 from agents.prober_agent import ProberAgent
 from agents.summarizer_agent import SummarizerAgent
 from agents.subject_simulator_agent import SubjectSimulatorAgent
+from services.database_service import db_service
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -57,25 +63,37 @@ responses = {}
 def initialize_sample_data():
     """Initialize sample project data for development testing"""
     sample_project_id = "4bc45289-0948-4c14-8be9-f4b91ce50428"
-    if sample_project_id not in projects:
-        projects[sample_project_id] = Project(
-            id=sample_project_id,
-            name="Grandma Rose's Story",
-            subject_info={
-                "name": "Rose Martinez",
-                "age": 82,
-                "relation": "grandmother",
-                "background": "Born in Mexico, immigrated to California in the 1960s. Raised 5 children while working as a seamstress.",
-                "language": "English"
-            },
-            interview_mode="family",
-            language="en",
-            status="created",
-            created_at=datetime.now(),
-            themes=[],
-            responses=[]
-        )
-        print(f"✅ Initialized sample project: {sample_project_id}")
+    
+    # Check if project exists in database or memory
+    existing_project = db_service.load_project(sample_project_id)
+    if existing_project:
+        projects[sample_project_id] = Project(**existing_project)
+        print(f"📂 Loaded existing sample project: {sample_project_id}")
+        return
+    
+    # Create new sample project
+    sample_project = Project(
+        id=sample_project_id,
+        name="Grandma Rose's Story",
+        subject_info={
+            "name": "Rose Martinez",
+            "age": 82,
+            "relation": "grandmother",
+            "background": "Born in Mexico, immigrated to California in the 1960s. Raised 5 children while working as a seamstress.",
+            "language": "English"
+        },
+        interview_mode="family",
+        language="en",
+        status="created",
+        created_at=datetime.now(),
+        themes=[],
+        responses=[]
+    )
+    
+    # Save to database and memory
+    projects[sample_project_id] = sample_project
+    db_service.save_project(sample_project.model_dump())
+    print(f"✅ Initialized sample project: {sample_project_id}")
 
 # Pydantic models
 class ProjectCreate(BaseModel):
@@ -87,6 +105,25 @@ class ProjectCreate(BaseModel):
     interview_mode: str  # "self", "family", "hybrid"
     language: str = "en"
 
+class Participant(BaseModel):
+    id: str
+    name: str
+    email: Optional[str] = None
+    role: str = "interviewer"  # "admin", "interviewer", "viewer"
+    assigned_themes: List[str] = []  # theme IDs assigned by admin
+    self_assigned_themes: List[str] = []  # theme IDs self-assigned by participant
+
+class EnhancedTheme(BaseModel):
+    id: str
+    name: str
+    description: str
+    questions: List[str] = []  # 10-15 questions per theme
+    suggested_interviewer: str = "family member"
+    assigned_to: Optional[str] = None  # participant ID assigned by admin
+    self_assigned_by: List[str] = []  # participant IDs who self-assigned
+    custom: bool = False  # True if manually added, False if AI-generated
+    status: str = "pending"  # "pending", "in_progress", "completed"
+
 class Project(BaseModel):
     id: str
     name: str
@@ -95,7 +132,10 @@ class Project(BaseModel):
     language: str
     status: str  # "created", "seed_questions", "themes_identified", "deep_dive", "completed"
     created_at: datetime
-    themes: List[Dict[str, Any]] = []
+    themes: List[Dict[str, Any]] = []  # Legacy format - will migrate to enhanced_themes
+    enhanced_themes: List[EnhancedTheme] = []  # New enhanced theme format
+    participants: List[Participant] = []  # Project participants
+    admin_id: Optional[str] = None  # ID of project administrator
     responses: List[Dict[str, str]] = []  # Store interview responses
     seed_questions: List[str] = []  # Cache generated seed questions
 
@@ -153,13 +193,21 @@ async def create_project(project_data: ProjectCreate):
     projects[project_id] = project
     responses[project_id] = []
     
+    # Save to database
+    db_service.save_project(project.model_dump())
+    
     return project
 
 @app.get("/projects/{project_id}", response_model=Project)
 async def get_project(project_id: str):
     """Get project details"""
     if project_id not in projects:
-        raise HTTPException(status_code=404, detail="Project not found")
+        # Try to load from database
+        project_data = db_service.load_project(project_id)
+        if project_data:
+            projects[project_id] = Project(**project_data)
+        else:
+            raise HTTPException(status_code=404, detail="Project not found")
     return projects[project_id]
 
 @app.get("/projects/{project_id}/seed-questions")
@@ -191,6 +239,9 @@ async def get_seed_questions(project_id: str):
     # Update project status
     projects[project_id].status = "seed_questions"
     
+    # Save to database
+    db_service.save_project(projects[project_id].model_dump())
+    
     return {"questions": questions, "total": len(questions)}
 
 @app.post("/projects/{project_id}/seed-questions/regenerate")
@@ -209,6 +260,166 @@ async def regenerate_seed_questions(project_id: str):
     print(f"Regenerated {len(questions)} questions for project {project_id}")
     
     return {"questions": questions, "total": len(questions), "regenerated": True}
+
+# Participant Management Endpoints
+@app.post("/projects/{project_id}/participants")
+async def add_participant(project_id: str, participant_data: dict):
+    """Add a participant to the project"""
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    participant = Participant(
+        id=str(uuid.uuid4()),
+        name=participant_data["name"],
+        email=participant_data.get("email"),
+        role=participant_data.get("role", "interviewer")
+    )
+    
+    projects[project_id].participants.append(participant)
+    return {"participant": participant, "message": "Participant added successfully"}
+
+@app.get("/projects/{project_id}/participants")
+async def get_participants(project_id: str):
+    """Get all participants for a project"""
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    return {"participants": projects[project_id].participants}
+
+@app.put("/projects/{project_id}/participants/{participant_id}/assign-theme")
+async def assign_theme_to_participant(project_id: str, participant_id: str, assignment_data: dict):
+    """Admin assigns a theme to a participant"""
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    project = projects[project_id]
+    theme_id = assignment_data["theme_id"]
+    
+    # Find participant
+    participant = next((p for p in project.participants if p.id == participant_id), None)
+    if not participant:
+        raise HTTPException(status_code=404, detail="Participant not found")
+    
+    # Add theme to participant's assigned themes
+    if theme_id not in participant.assigned_themes:
+        participant.assigned_themes.append(theme_id)
+    
+    # Update theme assignment in enhanced_themes if it exists
+    for theme in project.enhanced_themes:
+        if theme.id == theme_id:
+            theme.assigned_to = participant_id
+            break
+    
+    return {"message": "Theme assigned successfully"}
+
+@app.put("/projects/{project_id}/participants/{participant_id}/self-assign-theme")
+async def self_assign_theme(project_id: str, participant_id: str, assignment_data: dict):
+    """Participant self-assigns to a theme"""
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    project = projects[project_id]
+    theme_id = assignment_data["theme_id"]
+    
+    # Find participant
+    participant = next((p for p in project.participants if p.id == participant_id), None)
+    if not participant:
+        raise HTTPException(status_code=404, detail="Participant not found")
+    
+    # Add theme to participant's self-assigned themes
+    if theme_id not in participant.self_assigned_themes:
+        participant.self_assigned_themes.append(theme_id)
+    
+    # Update theme self-assignment in enhanced_themes if it exists
+    for theme in project.enhanced_themes:
+        if theme.id == theme_id:
+            if participant_id not in theme.self_assigned_by:
+                theme.self_assigned_by.append(participant_id)
+            break
+    
+    return {"message": "Self-assigned to theme successfully"}
+
+@app.post("/projects/{project_id}/themes/custom")
+async def add_custom_theme(project_id: str, theme_data: dict):
+    """Add a custom theme to the project"""
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Create enhanced theme
+    enhanced_theme = EnhancedTheme(
+        id=str(uuid.uuid4()),
+        name=theme_data["name"],
+        description=theme_data.get("description", ""),
+        questions=theme_data.get("questions", []),
+        suggested_interviewer=theme_data.get("suggested_interviewer", "family member"),
+        custom=True,  # User-created
+        status="pending"
+    )
+    
+    # Add to project
+    projects[project_id].enhanced_themes.append(enhanced_theme)
+    
+    # Also add to legacy format for backward compatibility
+    legacy_theme = {
+        "id": enhanced_theme.id,
+        "name": enhanced_theme.name,
+        "description": enhanced_theme.description,
+        "questions": enhanced_theme.questions,
+        "suggested_interviewer": enhanced_theme.suggested_interviewer
+    }
+    projects[project_id].themes.append(legacy_theme)
+    
+    return {"theme": enhanced_theme, "message": "Custom theme added successfully"}
+
+@app.get("/projects/{project_id}/themes/{theme_id}/preview")
+async def preview_theme_questions(project_id: str, theme_id: str):
+    """Preview questions for a theme before starting interview"""
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    project = projects[project_id]
+    
+    # Look in enhanced themes first
+    theme = next((t for t in project.enhanced_themes if t.id == theme_id), None)
+    
+    if not theme:
+        # Fallback to legacy themes
+        legacy_theme = next((t for t in project.themes if t["id"] == theme_id), None)
+        if not legacy_theme:
+            raise HTTPException(status_code=404, detail="Theme not found")
+        
+        return {
+            "theme_id": theme_id,
+            "name": legacy_theme["name"],
+            "description": legacy_theme["description"],
+            "questions": legacy_theme["questions"],
+            "total_questions": len(legacy_theme["questions"]),
+            "suggested_interviewer": legacy_theme["suggested_interviewer"],
+            "assignment_info": "No assignment info available (legacy theme)"
+        }
+    
+    # Get assignment information
+    assigned_participants = []
+    self_assigned_participants = []
+    
+    for participant in project.participants:
+        if theme_id in participant.assigned_themes:
+            assigned_participants.append({"id": participant.id, "name": participant.name})
+        if theme_id in participant.self_assigned_themes:
+            self_assigned_participants.append({"id": participant.id, "name": participant.name})
+    
+    return {
+        "theme_id": theme_id,
+        "name": theme.name,
+        "description": theme.description,
+        "questions": theme.questions,
+        "total_questions": len(theme.questions),
+        "suggested_interviewer": theme.suggested_interviewer,
+        "custom": theme.custom,
+        "status": theme.status,
+        "assigned_participants": assigned_participants,
+        "self_assigned_participants": self_assigned_participants
+    }
 
 @app.post("/responses", response_model=InterviewResponse)
 async def submit_response(response_data: ResponseSubmit):
@@ -270,30 +481,65 @@ async def identify_themes(project_id: str):
     ]
     
     # Identify themes using Planner Agent
-    themes = planner_agent.identify_themes(response_data)
+    themes = planner_agent.identify_themes(response_data, project_id)
     
-    # Add theme IDs
+    # Create enhanced themes with new format
+    enhanced_themes = []
     for theme in themes:
-        theme["id"] = str(uuid.uuid4())
+        enhanced_theme = EnhancedTheme(
+            id=str(uuid.uuid4()),
+            name=theme.get("name", "Untitled Theme"),
+            description=theme.get("description", ""),
+            questions=theme.get("questions", []),
+            suggested_interviewer=theme.get("suggested_interviewer", "family member"),
+            custom=False,  # AI-generated
+            status="pending"
+        )
+        enhanced_themes.append(enhanced_theme)
     
-    # Update project with themes
-    projects[project_id].themes = themes
+    # Update project with both legacy and enhanced themes for backward compatibility
+    legacy_themes = []
+    for theme in enhanced_themes:
+        legacy_themes.append({
+            "id": theme.id,
+            "name": theme.name,
+            "description": theme.description,
+            "questions": theme.questions,
+            "suggested_interviewer": theme.suggested_interviewer
+        })
+    
+    projects[project_id].themes = legacy_themes  # Keep for backward compatibility
+    projects[project_id].enhanced_themes = enhanced_themes  # New enhanced format
     projects[project_id].status = "themes_identified"
     
-    return {"themes": themes}
+    # Save to database
+    db_service.save_project(projects[project_id].model_dump())
+    
+    return {"themes": legacy_themes, "enhanced_themes": enhanced_themes}
 
 @app.get("/projects/{project_id}/themes/{theme_id}/questions")
 async def get_theme_questions(project_id: str, theme_id: str):
     """Get deep-dive questions for a specific theme"""
+    print(f"🎯 Getting theme questions for project_id: {project_id}, theme_id: {theme_id}")
+    
     if project_id not in projects:
+        print(f"❌ Project {project_id} not found in projects")
         raise HTTPException(status_code=404, detail="Project not found")
     
     project = projects[project_id]
-    theme = next((t for t in project.themes if t["id"] == theme_id), None)
+    print(f"📋 Project has {len(project.themes)} themes")
+    
+    # Debug: Print all theme IDs
+    for i, t in enumerate(project.themes):
+        print(f"  Theme {i}: id={t.get('id', 'NO_ID')}, name={t.get('name', 'NO_NAME')}")
+    
+    theme = next((t for t in project.themes if t.get("id") == theme_id), None)
     
     if not theme:
-        raise HTTPException(status_code=404, detail="Theme not found")
+        print(f"❌ Theme {theme_id} not found in project themes")
+        raise HTTPException(status_code=404, detail=f"Theme {theme_id} not found")
     
+    print(f"✅ Found theme: {theme['name']}")
     return {
         "theme": theme["name"],
         "description": theme["description"],

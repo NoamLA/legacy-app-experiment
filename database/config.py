@@ -173,10 +173,8 @@ class DatabaseManager:
                 db_url=self.config.agno_url,
                 # Environment-specific Agno table configurations
                 session_table=self.config.get_table_name("agent_sessions"),
-                run_table=self.config.get_table_name("agent_runs"),
-                message_table=self.config.get_table_name("agent_messages"),
                 memory_table=self.config.get_table_name("user_memories"),
-                summary_table=self.config.get_table_name("session_summaries")
+                # Note: Other tables (runs, messages, summaries) are handled internally by Agno
             )
         return self._agno_db
     

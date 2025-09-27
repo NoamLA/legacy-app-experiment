@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: legacy_postgres
+    environment:
+      POSTGRES_DB: legacy_interview_dev
+      POSTGRES_USER: legacy_user
+      POSTGRES_PASSWORD: legacy_pass
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema_multi_env.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - legacy_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U legacy_user -d legacy_interview_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Legacy Interview App Backend (optional - can run locally)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: legacy_backend
+    environment:
+      - LEGACY_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_BASE_NAME=legacy_interview
+      - DB_USER=legacy_user
+      - DB_PASSWORD=legacy_pass
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - legacy_network
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    profiles:
+      - full  # Only start with --profile full
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  legacy_network:
+    driver: bridge
