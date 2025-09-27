@@ -19,22 +19,24 @@ def get_agent_db():
     
     Environment Logic:
     - production: PostgresDb (persistent, multi-user, scalable)
+    - development + USE_POSTGRES=true: PostgresDb (for testing persistence)
     - ci/test/development: InMemoryDb (fast, temporary, single-user)
     
     Returns:
         Database instance appropriate for current environment
     """
     env = os.getenv("LEGACY_ENV", "test")
+    use_postgres = os.getenv("USE_POSTGRES", "false").lower() == "true"
     
-    if env == "production":
-        # Production: Use PostgreSQL for persistence and scalability
-        print(f"🗄️ Using PostgresDb for {env} environment")
+    if env == "production" or (env == "development" and use_postgres):
+        # Production or Development with PostgreSQL: Use PostgreSQL for persistence
+        print(f"🗄️ Using PostgresDb for {env} environment (persistence enabled)")
         config = DatabaseConfig(environment=env)
         manager = DatabaseManager(config)
         return manager.agno_db
     else:
         # Development/Testing: Use InMemoryDb for speed and simplicity
-        print(f"💾 Using InMemoryDb for {env} environment")
+        print(f"💾 Using InMemoryDb for {env} environment (set USE_POSTGRES=true for persistence)")
         return InMemoryDb()
 
 def get_agent_db_info():

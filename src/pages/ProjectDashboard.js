@@ -6,7 +6,9 @@ import {
   CheckCircleIcon, 
   ClockIcon,
   UserIcon,
-  ComputerDesktopIcon
+  ComputerDesktopIcon,
+  EyeIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 const ProjectDashboard = () => {
@@ -16,6 +18,9 @@ const ProjectDashboard = () => {
   const [responses, setResponses] = useState([]);
   const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   useEffect(() => {
     fetchProject();
@@ -70,6 +75,29 @@ const ProjectDashboard = () => {
 
   const startThemeInterview = (themeId) => {
     navigate(`/interview/${projectId}?phase=theme&themeId=${themeId}`);
+  };
+
+  const previewThemeQuestions = async (themeId) => {
+    setLoadingPreview(true);
+    try {
+      const response = await fetch(`/projects/${projectId}/themes/${themeId}/preview`);
+      if (response.ok) {
+        const data = await response.json();
+        setPreviewData(data);
+        setShowPreview(true);
+      } else {
+        console.error('Failed to fetch theme preview');
+      }
+    } catch (error) {
+      console.error('Error fetching theme preview:', error);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const closePreview = () => {
+    setShowPreview(false);
+    setPreviewData(null);
   };
 
   if (loading) {
@@ -252,13 +280,23 @@ const ProjectDashboard = () => {
                 <div className="text-xs text-gray-500 mb-3">
                   {theme.questions?.length || 0} questions prepared
                 </div>
-                <button 
-                  onClick={() => startThemeInterview(theme.id)}
-                  className="btn-primary w-full text-sm"
-                >
-                  <PlayIcon className="w-4 h-4 mr-2 inline" />
-                  Explore Theme
-                </button>
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => previewThemeQuestions(theme.id)}
+                    className="btn-secondary flex-1 text-sm"
+                    disabled={loadingPreview}
+                  >
+                    <EyeIcon className="w-4 h-4 mr-2 inline" />
+                    Preview Questions
+                  </button>
+                  <button 
+                    onClick={() => startThemeInterview(theme.id)}
+                    className="btn-primary flex-1 text-sm"
+                  >
+                    <PlayIcon className="w-4 h-4 mr-2 inline" />
+                    Start Interview
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -286,6 +324,106 @@ const ProjectDashboard = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Theme Preview Modal */}
+      {showPreview && previewData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{previewData.name}</h2>
+                <p className="text-sm text-gray-600 mt-1">{previewData.description}</p>
+                <div className="flex items-center mt-2 text-sm text-gray-500">
+                  <span className="font-medium">{previewData.total_questions} questions</span>
+                  {previewData.custom && (
+                    <span className="ml-3 px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                      Custom Theme
+                    </span>
+                  )}
+                  <div className="ml-3 flex items-center">
+                    {previewData.suggested_interviewer === 'AI' ? (
+                      <ComputerDesktopIcon className="w-4 h-4 mr-1" />
+                    ) : (
+                      <UserIcon className="w-4 h-4 mr-1" />
+                    )}
+                    <span>Suggested: {previewData.suggested_interviewer}</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={closePreview}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Assignment Information */}
+            {(previewData.assigned_participants?.length > 0 || previewData.self_assigned_participants?.length > 0) && (
+              <div className="px-6 py-4 bg-blue-50 border-b">
+                <h3 className="font-medium text-blue-900 mb-2">Assignment Status</h3>
+                <div className="text-sm space-y-1">
+                  {previewData.assigned_participants?.length > 0 && (
+                    <div>
+                      <span className="font-medium text-blue-800">Assigned to: </span>
+                      {previewData.assigned_participants.map(p => p.name).join(', ')}
+                    </div>
+                  )}
+                  {previewData.self_assigned_participants?.length > 0 && (
+                    <div>
+                      <span className="font-medium text-blue-800">Self-assigned: </span>
+                      {previewData.self_assigned_participants.map(p => p.name).join(', ')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Questions List */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Interview Questions</h3>
+              <div className="space-y-4">
+                {previewData.questions?.map((question, index) => (
+                  <div key={index} className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-gray-900">{question}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between p-6 border-t bg-gray-50">
+              <div className="text-sm text-gray-600">
+                {previewData.total_questions} questions • Estimated time: {Math.ceil(previewData.total_questions * 2)} minutes
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={closePreview}
+                  className="btn-secondary"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    closePreview();
+                    startThemeInterview(previewData.theme_id);
+                  }}
+                  className="btn-primary"
+                >
+                  <PlayIcon className="w-4 h-4 mr-2 inline" />
+                  Start Interview
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

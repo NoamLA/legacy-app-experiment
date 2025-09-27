@@ -46,7 +46,8 @@ python ./scripts/start-backend.py # Backend
 # 3. Visit http://localhost:3000
 
 # 4. Run tests (optional)
-./scripts/run-tests.sh fast      # Quick tests
+./scripts/run-tests.sh unit      # Fast unit tests (mocked)
+./scripts/run-tests.sh database  # Real database tests (Docker required)
 ```
 
 ## 📁 Project Structure
@@ -96,7 +97,8 @@ legacy/
 ### ✅ **Completed Features:**
 - **Multi-Agent System**: Planner, Prober, Summarizer, and Subject Simulator agents
 - **Database Infrastructure**: PostgreSQL with multi-environment support (CI/Test/Production)
-- **Testing Framework**: Comprehensive test suite with 60%+ pass rate
+- **Testing Framework**: Comprehensive test suite with both mocked and real database tests
+- **Real Database Integration**: Docker-based PostgreSQL testing with actual persistence
 - **Repository Organization**: Well-structured codebase with proper documentation
 - **Development Environment**: Optimized InMemoryDb for fast development
 

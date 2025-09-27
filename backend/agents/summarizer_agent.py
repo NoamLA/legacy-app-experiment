@@ -3,14 +3,17 @@ Summarizer Agent - Compiles interviews into narratives and outputs
 """
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
-from agno.db.in_memory import InMemoryDb
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+from database.agent_db import get_agent_db
 from typing import List, Dict, Any
 import json
 
 class SummarizerAgent:
     def __init__(self):
         # Initialize with Agno's proper session management
-        self.db = InMemoryDb()
+        self.db = get_agent_db()
         
         self.agent = Agent(
             model=OpenAIChat(id="gpt-4o"),

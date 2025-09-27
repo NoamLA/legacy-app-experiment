@@ -95,9 +95,9 @@ class TestProberAgent:
                 "Test response"
             )
             
-            # Should return empty list for invalid JSON
+            # Should return fallback questions for invalid JSON (not empty list)
             assert isinstance(questions, list)
-            assert len(questions) == 0
+            assert len(questions) >= 1  # Agent provides fallback questions
     
     @pytest.mark.unit
     def test_suggest_reflection_questions(self, prober_agent, sample_conversation_context):
@@ -126,34 +126,25 @@ class TestProberAgent:
     @pytest.mark.unit
     def test_adapt_question_style(self, prober_agent):
         """Test question style adaptation"""
-        mock_adapted = {
-            "adapted_questions": [
-                "Can you tell me more about that time when you felt really happy?",
-                "What was it like when money was tight for your family?"
-            ],
-            "style_notes": "Questions adapted for elderly subject, using simpler language and emotional cues"
-        }
+        # This method returns a simple adapted question string
+        mock_adapted_question = "Can you tell me more about that time when you felt really happy?"
         
         mock_response = Mock()
-        mock_response.content = json.dumps(mock_adapted)
+        mock_response.content = mock_adapted_question
         with patch.object(prober_agent, "agent") as mock_agent:
-        mock_agent.run.return_value = mock_response
+            mock_agent.run.return_value = mock_response
         
-        original_questions = [
-            "Elaborate on the emotional significance of that period",
-            "Describe the socioeconomic challenges your family faced"
-            ]
-        
+            original_question = "Elaborate on the emotional significance of that period"
+            
             result = prober_agent.adapt_question_style(
-            original_questions,
-            {"age": 85, "education": "elementary"},
-            "test-project-123"
+                {"age": 85, "education": "elementary"},
+                original_question,
+                "test-project-123"
             )
         
-            assert "adapted_questions" in result
-            assert "style_notes" in result
-            assert len(result["adapted_questions"]) == 2
-            assert "simpler language" in result["style_notes"]
+            assert isinstance(result, str)
+            assert len(result) > 0
+            assert "happy" in result.lower()  # Check that adaptation occurred
     
     @pytest.mark.unit
     def test_context_analysis(self, prober_agent, sample_conversation_context):

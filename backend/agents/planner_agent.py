@@ -3,7 +3,10 @@ Planner Agent - Generates seed questions and identifies themes for interviews
 """
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
-from agno.db.in_memory import InMemoryDb
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+from database.agent_db import get_agent_db
 from typing import List, Dict, Any, Tuple
 import json
 import re
@@ -113,7 +116,7 @@ def _validate_and_repair(payload: Dict[str, Any]) -> Dict[str, Any]:
 class PlannerAgent:
     def __init__(self):
         # Initialize with Agno's proper session management
-        self.db = InMemoryDb()
+        self.db = get_agent_db()
         
         self.agent = Agent(
             model=OpenAIChat(id="gpt-4o"),
@@ -276,16 +279,28 @@ Analyze these interview responses and identify 3–5 major themes for deeper exp
 
 For each theme, provide:
 1. Theme name
-2. Why it matters (1–2 sentences)
-3. 3–5 deeper follow-up questions
+2. Why it matters (1–2 sentences)  
+3. 10-15 deeper follow-up questions that explore this theme comprehensively
 4. Suggested interviewer (e.g., "eldest child", "AI", "spouse")
+
+The questions should:
+- Progress from general to specific
+- Include both factual and emotional aspects
+- Encourage storytelling and detailed memories
+- Cover different time periods and perspectives
+- Be appropriate for the subject's background and age
 
 Return STRICT JSON array:
 [
   {{
     "name": "Theme Name",
     "description": "Why this theme matters",
-    "questions": ["Question 1", "Question 2", "Question 3"],
+    "questions": [
+      "Question 1 - introductory/general",
+      "Question 2 - specific memory",
+      "Question 3 - emotional aspect",
+      "...continue with 10-15 total questions"
+    ],
     "suggested_interviewer": "eldest child"
   }}
 ]
@@ -313,19 +328,40 @@ Return STRICT JSON array:
                     "name": "Home & Belonging",
                     "description": "Place and routine provide safety and identity.",
                     "questions": [
-                        "Can you describe a scene from your favorite spot at home?",
+                        "Can you describe your favorite spot at home and what makes it special?",
                         "Who visits you there, and what do you do together?",
-                        "Has that place changed over time for you?"
+                        "What sounds, smells, or sights make this place feel like home?",
+                        "How has your relationship with this space changed over time?",
+                        "What objects in this space hold the most meaning for you?",
+                        "Can you share a specific memory that happened in this place?",
+                        "Who else has spent meaningful time in this space with you?",
+                        "What daily routines happen here that bring you comfort?",
+                        "If you had to leave this place, what would you miss most?",
+                        "How does this space reflect who you are as a person?",
+                        "What stories would these walls tell if they could speak?",
+                        "How do you hope others will remember this place?"
                     ],
                     "suggested_interviewer": "eldest child"
                 },
                 {
-                    "name": "Journeys & Resilience",
+                    "name": "Journeys & Resilience", 
                     "description": "Moves and hardships shaped outlook and choices.",
                     "questions": [
-                        "What helped you decide to keep going during difficult times?",
-                        "Who gave you strength then?",
-                        "What did you learn about yourself through that journey?"
+                        "What was the most significant journey or move in your life?",
+                        "What led to the decision to make that change?",
+                        "Who supported you during that transition?",
+                        "What did you have to leave behind, and how did that feel?",
+                        "What surprised you most about adapting to something new?",
+                        "How did you find strength during the most difficult moments?",
+                        "What skills or qualities did you discover in yourself?",
+                        "Who were the people who helped you along the way?",
+                        "What advice would you give someone facing a similar challenge?",
+                        "How did this experience change your perspective on life?",
+                        "What are you most proud of about how you handled it?",
+                        "What did you learn about yourself that you didn't know before?",
+                        "How has this experience influenced the choices you've made since?",
+                        "What would you want your family to understand about this time?",
+                        "Looking back, what meaning do you find in this journey?"
                     ],
                     "suggested_interviewer": "AI"
                 }

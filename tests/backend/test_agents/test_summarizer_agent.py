@@ -139,10 +139,10 @@ class TestSummarizerAgent:
         mock_response = Mock()
         mock_response.content = json.dumps(expected_quotes)
         with patch.object(summarizer_agent, "agent") as mock_agent:
-        mock_agent.run.return_value = mock_response
+            mock_agent.run.return_value = mock_response
         
-        quotes = summarizer_agent.extract_memorable_quotes(sample_interview_data, "test-project-123")
-        
+            quotes = summarizer_agent.extract_memorable_quotes(sample_interview_data, "test-project-123")
+            
             assert isinstance(quotes, list)
             assert len(quotes) == 3
             assert all("quote" in q and "context" in q and "significance" in q for q in quotes)
@@ -154,11 +154,11 @@ class TestSummarizerAgent:
         mock_response = Mock()
         mock_response.content = "This is not valid JSON"
         with patch.object(summarizer_agent, "agent") as mock_agent:
-        mock_agent.run.return_value = mock_response
-        
-        quotes = summarizer_agent.extract_memorable_quotes(sample_interview_data, "test-project-123")
-        
-        # Should return empty list for invalid JSON
+            mock_agent.run.return_value = mock_response
+            
+            quotes = summarizer_agent.extract_memorable_quotes(sample_interview_data, "test-project-123")
+            
+            # Should return empty list for invalid JSON
             assert isinstance(quotes, list)
             assert len(quotes) == 0
     
