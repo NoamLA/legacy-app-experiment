@@ -1,0 +1,73 @@
+# Legacy Interview App Environment Variables Template
+# Copy this file to .env and update with your actual values
+
+# =============================================================================
+# ENVIRONMENT CONFIGURATION
+# =============================================================================
+
+# Application environment: ci, test, production, development
+# This controls which database and table prefix to use
+LEGACY_ENV=test
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+
+# Database connection settings
+DB_HOST=localhost
+DB_PORT=5432
+DB_BASE_NAME=legacy_interview
+DB_USER=legacy_user
+DB_PASSWORD=legacy_pass
+DB_SSL_MODE=prefer
+
+# Connection pool settings (environment-specific defaults will be used if not set)
+DB_POOL_SIZE=10
+DB_MAX_OVERFLOW=20
+DB_POOL_TIMEOUT=30
+DB_POOL_RECYCLE=3600
+
+# Debug settings
+DB_ECHO=false
+
+# =============================================================================
+# API KEYS
+# =============================================================================
+
+# OpenAI API Key (required for all AI agents)
+OPENAI_API_KEY=your_openai_api_key_here
+
+# =============================================================================
+# APPLICATION SETTINGS
+# =============================================================================
+
+# FastAPI secret key (generate with: openssl rand -hex 32)
+SECRET_KEY=your_secret_key_here
+
+# =============================================================================
+# ENVIRONMENT-SPECIFIC NOTES
+# =============================================================================
+
+# CI Environment (LEGACY_ENV=ci):
+#   - Database: legacy_interview_ci
+#   - Tables: ci_projects, ci_agent_sessions, etc.
+#   - Minimal connection pool (2 connections)
+#   - Optimized for automated testing
+
+# Test Environment (LEGACY_ENV=test):
+#   - Database: legacy_interview_test
+#   - Tables: test_projects, test_agent_sessions, etc.
+#   - Small connection pool (5 connections)
+#   - Safe for development and testing
+
+# Production Environment (LEGACY_ENV=production):
+#   - Database: legacy_interview_prod
+#   - Tables: projects, agent_sessions, etc. (no prefix)
+#   - Large connection pool (20 connections)
+#   - Optimized for high performance
+
+# Development Environment (LEGACY_ENV=development):
+#   - Database: legacy_interview_dev
+#   - Tables: dev_projects, dev_agent_sessions, etc.
+#   - Medium connection pool (10 connections)
+#   - Debug logging enabled

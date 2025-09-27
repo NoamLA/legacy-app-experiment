@@ -13,5 +13,16 @@ openai-whisper>=20231117
 pydantic>=2.0.0
 sqlalchemy>=2.0.0
 alembic>=1.11.0
+psycopg[binary]>=3.1.0
 psycopg2-binary>=2.9.0
+pgvector>=0.2.0
 redis>=4.0.0
+
+# Testing Dependencies
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.11.0
+pytest-cov>=4.1.0
+pytest-xdist>=3.3.0
+httpx>=0.24.0
+factory-boy>=3.3.0
