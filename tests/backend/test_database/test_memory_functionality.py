@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 import sys
 from pathlib import Path
+from sqlalchemy import text
 
 # Add backend and database to path
 backend_path = Path(__file__).parent.parent.parent.parent / "backend"
@@ -72,31 +73,33 @@ class TestMemoryFunctionality:
         mock_response2 = Mock()
         mock_response2.content = "As I mentioned before, Jalisco was beautiful..."
         
-        mock_agent.run.side_effect = [mock_response1, mock_response2]
-        
-        # First interaction
-        response1 = simulator.generate_authentic_response(
-            "Tell me about your childhood",
-            project_id=test_project_id
-        )
-        
-        # Second interaction
-        response2 = simulator.generate_authentic_response(
-            "What else do you remember?",
-            project_id=test_project_id
-        )
-        
-        # Verify session consistency
-        assert mock_agent.run.call_count == 2
-        
-        # Both calls should use the same session_id
-        call1_kwargs = mock_agent.run.call_args_list[0][1]
-        call2_kwargs = mock_agent.run.call_args_list[1][1]
-        
-        assert call1_kwargs["session_id"] == f"interview_{test_project_id}"
-        assert call2_kwargs["session_id"] == f"interview_{test_project_id}"
-        assert call1_kwargs["user_id"] == "interview_subject"
-        assert call2_kwargs["user_id"] == "interview_subject"
+        # Mock the agent properly
+        with patch.object(simulator, 'agent') as mock_agent:
+            mock_agent.run.side_effect = [mock_response1, mock_response2]
+            
+            # First interaction
+            response1 = simulator.generate_authentic_response(
+                "Tell me about your childhood",
+                project_id=test_project_id
+            )
+            
+            # Second interaction
+            response2 = simulator.generate_authentic_response(
+                "What else do you remember?",
+                project_id=test_project_id
+            )
+            
+            # Verify session consistency
+            assert mock_agent.run.call_count == 2
+            
+            # Both calls should use the same session_id
+            call1_kwargs = mock_agent.run.call_args_list[0][1]
+            call2_kwargs = mock_agent.run.call_args_list[1][1]
+            
+            assert call1_kwargs["session_id"] == f"interview_{test_project_id}"
+            assert call2_kwargs["session_id"] == f"interview_{test_project_id}"
+            assert call1_kwargs["user_id"] == "interview_subject"
+            assert call2_kwargs["user_id"] == "interview_subject"
         
     @pytest.mark.unit
     def test_conversation_summary_retrieval(self, mock_agent_with_memory, test_project_id):
@@ -199,7 +202,7 @@ class TestMemoryFunctionality:
             assert session.is_active
             
             # Simulate some database operations
-            result = session.execute("SELECT 1")
+            result = session.execute(text("SELECT 1"))
             assert result.scalar() == 1
             
         # Session should be properly closed

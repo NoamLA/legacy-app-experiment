@@ -183,13 +183,11 @@ class TestDatabaseManager:
         agno_db = manager.agno_db
         
         # Verify PostgresDb was called with environment-specific table names
+        # Only session_table and memory_table are passed (others handled internally by Agno)
         mock_postgres_db.assert_called_once_with(
             db_url=mock_config.agno_url,
             session_table="test_agent_sessions",
-            run_table="test_agent_runs",
-            message_table="test_agent_messages",
-            memory_table="test_user_memories",
-            summary_table="test_session_summaries"
+            memory_table="test_user_memories"
         )
         
     @pytest.mark.unit
@@ -299,12 +297,10 @@ class TestEnvironmentIntegration:
             config = DatabaseConfig()
             
             # Test that Agno table names are correctly prefixed
+            # Only session_table and memory_table are passed to PostgresDb
             expected_tables = {
                 "session_table": "ci_agent_sessions",
-                "run_table": "ci_agent_runs", 
-                "message_table": "ci_agent_messages",
-                "memory_table": "ci_user_memories",
-                "summary_table": "ci_session_summaries"
+                "memory_table": "ci_user_memories"
             }
             
             with patch('config.PostgresDb') as mock_postgres:
