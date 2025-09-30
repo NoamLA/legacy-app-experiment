@@ -26,5 +26,5 @@ Are there topics you would like to avoid? (Sensitive, painful, off-limits areas)
 
 
 
-born in czechoslovakia in a jewish family prior to world war 2. she illegally migrated to israel in the british mandate time with her parents and big brother. they lived in haifa until her twenties. she married jacob and had 2 kids. she lives in rehovot today.
+    born in czechoslovakia in a jewish family prior to world war 2. she illegally migrated to israel in the british mandate time with her parents and big brother. they lived in haifa until her twenties. she married jacob and had 2 kids. she lives in rehovot today.
 """

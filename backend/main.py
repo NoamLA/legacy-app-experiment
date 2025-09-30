@@ -170,6 +170,31 @@ initialize_sample_data()
 async def root():
     return {"message": "Legacy Interview API", "status": "running"}
 
+@app.get("/api/projects/list")
+async def list_projects():
+    """List all projects"""
+    try:
+        all_projects = db_service.list_projects()
+        projects_list = []
+        
+        for project_id, project_data in all_projects.items():
+            # Get response count for this project
+            project_responses = responses.get(project_id, [])
+            
+            # Add response count to project data
+            project_info = {
+                **project_data,
+                "responses": project_responses
+            }
+            projects_list.append(project_info)
+        
+        # Sort by created_at (newest first)
+        projects_list.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+        
+        return {"projects": projects_list}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list projects: {str(e)}")
+
 @app.post("/projects", response_model=Project)
 async def create_project(project_data: ProjectCreate):
     """Create a new interview project"""

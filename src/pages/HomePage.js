@@ -35,12 +35,12 @@ const HomePage = () => {
         </p>
         <div className="flex justify-center space-x-4">
           <Link to="/create-project" className="btn-primary text-lg px-8 py-3">
-            Start Your First Interview
+            Start New Interview
             <ArrowRightIcon className="w-5 h-5 ml-2 inline" />
           </Link>
-          <button className="btn-secondary text-lg px-8 py-3">
-            Watch Demo
-          </button>
+          <Link to="/projects" className="btn-secondary text-lg px-8 py-3">
+            Continue Previous Projects
+          </Link>
         </div>
       </div>
 

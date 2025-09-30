@@ -5,7 +5,7 @@ Automatically chooses the right database based on environment:
 - Production: PostgresDb (persistent, scalable)
 
 This file implements the decision made in September 2025 to use:
-- InMemoryDb for development (current setup)
+- InMemoryDb for development (current setup) unless PostgresDb = true
 - PostgresDb for production (migration required)
 """
 import os
