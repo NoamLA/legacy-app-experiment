@@ -30,6 +30,7 @@ from agents.planner_agent import PlannerAgent
 from agents.prober_agent import ProberAgent
 from agents.summarizer_agent import SummarizerAgent
 from agents.subject_simulator_agent import SubjectSimulatorAgent
+from services.conversation_recording_service import conversation_recording_service
 from services.database_service import db_service
 
 # Initialize FastAPI app
@@ -160,6 +161,21 @@ class SimulatorRequest(BaseModel):
     project_id: str
     question: str
     context: Optional[Dict[str, Any]] = {}
+
+class ConversationSessionRequest(BaseModel):
+    project_id: str
+    session_name: str
+    participants: Optional[List[Dict[str, str]]] = None
+
+class AudioChunkRequest(BaseModel):
+    session_id: str
+    audio_data: str  # Base64 encoded audio data
+    sample_rate: int = 16000
+
+class TranscriptionRequest(BaseModel):
+    session_id: str
+    utterance_id: str
+    transcription_service: str = "openai"
 
 # Initialize sample data after all classes are defined
 initialize_sample_data()
@@ -674,6 +690,127 @@ async def reset_simulator_conversation(project_id: str):
     
     subject_simulator.reset_conversation(project_id=project_id)
     return {"message": f"Simulator conversation reset for project {project_id}"}
+
+# Conversation Recording Endpoints
+
+@app.post("/conversation/start")
+async def start_conversation_recording(request: ConversationSessionRequest):
+    """Start a new conversation recording session with speaker separation"""
+    try:
+        session_id = await conversation_recording_service.start_recording_session(
+            project_id=request.project_id,
+            session_name=request.session_name,
+            participants=request.participants
+        )
+        
+        return {
+            "session_id": session_id,
+            "status": "started",
+            "message": "Conversation recording session started"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start recording: {str(e)}")
+
+@app.post("/conversation/audio-chunk")
+async def process_audio_chunk(request: AudioChunkRequest):
+    """Process audio chunk and extract speaker-separated utterances"""
+    try:
+        import base64
+        
+        # Decode base64 audio data
+        audio_data = base64.b64decode(request.audio_data)
+        
+        result = await conversation_recording_service.process_audio_chunk(
+            session_id=request.session_id,
+            audio_data=audio_data,
+            sample_rate=request.sample_rate
+        )
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process audio: {str(e)}")
+
+@app.post("/conversation/transcribe")
+async def transcribe_utterance(request: TranscriptionRequest):
+    """Transcribe a specific utterance with speaker identification"""
+    try:
+        result = await conversation_recording_service.transcribe_utterance(
+            session_id=request.session_id,
+            utterance_id=request.utterance_id,
+            transcription_service=request.transcription_service
+        )
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to transcribe: {str(e)}")
+
+@app.post("/conversation/end/{session_id}")
+async def end_conversation_recording(session_id: str):
+    """End conversation recording session and save all data"""
+    try:
+        result = await conversation_recording_service.end_recording_session(session_id)
+        
+        return {
+            "session_id": session_id,
+            "status": "completed",
+            "audio_file_path": result.get('audio_file_path'),
+            "transcription_file_path": result.get('transcription_file_path'),
+            "utterance_count": len(result.get('utterances', [])),
+            "message": "Conversation recording session ended and saved"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to end recording: {str(e)}")
+
+@app.get("/conversation/sessions/{project_id}")
+async def get_conversation_sessions(project_id: str):
+    """Get all conversation sessions for a project"""
+    try:
+        # This would query the database for conversation sessions
+        # For now, return mock data
+        return {
+            "project_id": project_id,
+            "sessions": [
+                {
+                    "id": "session_1",
+                    "session_name": "Initial Interview",
+                    "status": "completed",
+                    "started_at": "2024-01-01T10:00:00Z",
+                    "ended_at": "2024-01-01T11:00:00Z",
+                    "utterance_count": 45,
+                    "participants": ["Interviewer", "Subject"]
+                }
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get sessions: {str(e)}")
+
+@app.get("/conversation/session/{session_id}/transcript")
+async def get_conversation_transcript(session_id: str):
+    """Get full conversation transcript with speaker separation"""
+    try:
+        # This would load the transcription from the database
+        # For now, return mock data
+        return {
+            "session_id": session_id,
+            "transcript": [
+                {
+                    "speaker": "Interviewer",
+                    "text": "Hello, thank you for agreeing to this interview.",
+                    "timestamp": "00:00:00",
+                    "confidence": "0.95"
+                },
+                {
+                    "speaker": "Subject",
+                    "text": "You're welcome, I'm happy to share my story.",
+                    "timestamp": "00:00:05",
+                    "confidence": "0.92"
+                }
+            ],
+            "participants": ["Interviewer", "Subject"],
+            "duration": "01:00:00"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get transcript: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

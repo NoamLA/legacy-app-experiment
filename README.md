@@ -15,6 +15,9 @@ This is a **minimal viable structure** designed for investigating and experiment
 - **👥 Family Collaboration**: Framework for assigning questions to family members
 - **📄 Multiple Outputs**: Transform interviews into narratives, quotes, and structured content
 - **🔄 Progressive Flow**: Guided interview process from seed questions to deep themes
+- **🎙️ Conversation Recording**: Advanced audio recording with automatic speaker separation
+- **📝 Real-time Transcription**: Live speech-to-text with speaker identification and confidence scoring
+- **🎵 Audio Processing**: Voice activity detection, noise suppression, and quality optimization
 
 ## 🏗️ Architecture
 
@@ -131,4 +134,4 @@ Use this lean structure to:
 This foundation provides everything needed to investigate the Legacy Interview App concept while maintaining a clean, extensible codebase.
 
 ---
-**📅 Last Updated:** September 27, 2025
+**📅 Last Updated:** October 1, 2025
