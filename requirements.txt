@@ -30,6 +30,9 @@ pyannote.audio>=3.1.0
 torch>=1.9.0  # For GPU support
 torchaudio>=0.9.0  # For audio processing
 
+# Audio Evaluation Dependencies
+jiwer>=3.0.0  # For Word Error Rate calculations
+
 # Testing Dependencies
 pytest>=7.4.0
 pytest-asyncio>=0.21.0

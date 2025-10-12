@@ -87,6 +87,7 @@ legacy/
 - **Theme Detection**: AI's ability to identify meaningful life themes
 - **Response Quality**: How well the system handles various answer types
 - **Export Formats**: Different ways to present the collected stories
+- **Audio Transcription**: Speaker diarization and transcription with evaluation metrics
 
 ## 🔧 Customization Points
 
@@ -102,6 +103,7 @@ legacy/
 - **Database Infrastructure**: PostgreSQL with multi-environment support (CI/Test/Production)
 - **Testing Framework**: Comprehensive test suite with both mocked and real database tests
 - **Real Database Integration**: Docker-based PostgreSQL testing with actual persistence
+- **Audio Transcription**: PyAnnote-Audio 3.1 speaker diarization with evaluation metrics
 - **Repository Organization**: Well-structured codebase with proper documentation
 - **Development Environment**: Optimized InMemoryDb for fast development
 
@@ -134,4 +136,4 @@ Use this lean structure to:
 This foundation provides everything needed to investigate the Legacy Interview App concept while maintaining a clean, extensible codebase.
 
 ---
-**📅 Last Updated:** October 1, 2025
+**📅 Last Updated:** October 12, 2025

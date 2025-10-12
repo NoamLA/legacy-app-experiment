@@ -43,11 +43,18 @@ class ConversationRecordingService:
         self.diarization_pipeline = None
         if PYANNOTE_AVAILABLE:
             try:
-                # Use community model (free) - no authentication required
-                self.diarization_pipeline = Pipeline.from_pretrained(
-                    "pyannote/speaker-diarization-community-1"
-                )
-                logger.info("PyAnnote-Audio speaker diarization pipeline loaded (community model)")
+                # Get HuggingFace token from environment
+                hf_token = os.getenv('HF_TOKEN')
+                if not hf_token:
+                    logger.warning("HF_TOKEN not found in environment - PyAnnote-Audio will use fallback")
+                    self.diarization_pipeline = None
+                else:
+                    # Use 3.1 model with authentication
+                    self.diarization_pipeline = Pipeline.from_pretrained(
+                        "pyannote/speaker-diarization-3.1",
+                        use_auth_token=hf_token
+                    )
+                    logger.info("PyAnnote-Audio speaker diarization pipeline loaded (community model with auth)")
             except Exception as e:
                 logger.warning(f"Failed to load PyAnnote-Audio pipeline: {e}")
                 logger.info("Falling back to basic audio processing without speaker diarization")
@@ -134,6 +141,8 @@ class ConversationRecordingService:
             
             # Process with PyAnnote-Audio for speaker diarization
             diarization_result = await self._process_speaker_diarization(str(audio_file_path))
+            print(f"🔍 DEBUG: Diarization result type: {type(diarization_result)}")
+            print(f"🔍 DEBUG: Diarization result: {diarization_result}")
             
             # Transcribe each speaker segment
             utterances = await self._transcribe_speaker_segments(
@@ -141,6 +150,7 @@ class ConversationRecordingService:
                 diarization_result,
                 session
             )
+            print(f"🔍 DEBUG: Generated {len(utterances)} utterances")
             
             # Update session with results
             session['utterances'] = utterances
@@ -248,10 +258,17 @@ class ConversationRecordingService:
         utterances = []
         
         try:
-            for turn, speaker in diarization_result:
+            print(f"🔍 DEBUG: Processing diarization result: {type(diarization_result)}")
+            
+            # Handle both old and new PyAnnote formats
+            segment_count = 0
+            for segment, _, speaker in diarization_result.itertracks(yield_label=True):
+                segment_count += 1
+                print(f"🔍 DEBUG: Processing segment {segment_count}: {segment.start:.1f}s - {segment.end:.1f}s, speaker: {speaker}")
+                
                 # Extract audio segment
-                start_time = turn.start
-                end_time = turn.end
+                start_time = segment.start
+                end_time = segment.end
                 duration = end_time - start_time
                 
                 # Create utterance record
