@@ -8,7 +8,8 @@ import {
   UserIcon,
   ComputerDesktopIcon,
   EyeIcon,
-  XMarkIcon
+  XMarkIcon,
+  MicrophoneIcon
 } from '@heroicons/react/24/outline';
 
 const ProjectDashboard = () => {
@@ -254,6 +255,69 @@ const ProjectDashboard = () => {
             ) : (
               <div className="text-sm text-gray-500">Waiting for themes</div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Conversation Recording Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Conversation Recording</h2>
+        
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                <MicrophoneIcon className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Record Conversations with Speaker Separation
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Capture natural conversations with automatic speaker identification and real-time transcription
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-200">
+              <h4 className="font-medium text-gray-900 mb-2">🎙️ Real-time Recording</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Automatic speaker separation</li>
+                <li>• Live transcription</li>
+                <li>• Voice activity detection</li>
+                <li>• Audio quality optimization</li>
+              </ul>
+            </div>
+            
+            <div className="bg-white rounded-lg p-4 border border-gray-200">
+              <h4 className="font-medium text-gray-900 mb-2">📝 Smart Transcription</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Speaker identification</li>
+                <li>• Confidence scoring</li>
+                <li>• Timestamp tracking</li>
+                <li>• Export capabilities</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="flex space-x-3">
+            <button
+              onClick={() => navigate(`/project/${projectId}/conversations`)}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center space-x-2"
+            >
+              <MicrophoneIcon className="w-5 h-5" />
+              <span>Manage Conversations</span>
+            </button>
+            
+            <button
+              onClick={() => navigate(`/project/${projectId}/conversations?tab=record`)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center space-x-2"
+            >
+              <PlayIcon className="w-5 h-5" />
+              <span>Start Recording</span>
+            </button>
           </div>
         </div>
       </div>

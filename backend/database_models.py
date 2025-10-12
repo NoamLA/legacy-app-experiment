@@ -36,6 +36,7 @@ class Project(Base):
     responses = relationship("InterviewResponse", back_populates="project", cascade="all, delete-orphan")
     theme_records = relationship("InterviewTheme", back_populates="project", cascade="all, delete-orphan")
     documents = relationship("KnowledgeDocument", back_populates="project", cascade="all, delete-orphan")
+    conversation_sessions = relationship("ConversationSession", back_populates="project", cascade="all, delete-orphan")
     
     def to_dict(self):
         """Convert to dictionary for API responses"""
@@ -86,6 +87,78 @@ class InterviewResponse(Base):
             'timestamp': self.timestamp.isoformat() if self.timestamp else None,
             'followup_questions': self.followup_questions,
             'metadata': self.extra_metadata
+        }
+
+class ConversationSession(Base):
+    """Conversation recording session model"""
+    __tablename__ = "conversation_sessions"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(UUID(as_uuid=True), ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
+    session_name = Column(String(255), nullable=False)
+    status = Column(String(50), nullable=False, default='active')  # 'active', 'paused', 'completed'
+    started_at = Column(DateTime(timezone=True), server_default=func.now())
+    ended_at = Column(DateTime(timezone=True))
+    audio_file_path = Column(String(500))  # Path to recorded audio file
+    transcription_file_path = Column(String(500))  # Path to transcription file
+    participants = Column(JSONB, default=[])  # List of participants with speaker IDs
+    metadata = Column(JSONB, default={})  # Additional session metadata
+    
+    # Relationships
+    project = relationship("Project", back_populates="conversation_sessions")
+    utterances = relationship("ConversationUtterance", back_populates="session", cascade="all, delete-orphan")
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses"""
+        return {
+            'id': str(self.id),
+            'project_id': str(self.project_id),
+            'session_name': self.session_name,
+            'status': self.status,
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'ended_at': self.ended_at.isoformat() if self.ended_at else None,
+            'audio_file_path': self.audio_file_path,
+            'transcription_file_path': self.transcription_file_path,
+            'participants': self.participants,
+            'metadata': self.metadata,
+            'utterance_count': len(self.utterances) if self.utterances else 0
+        }
+
+class ConversationUtterance(Base):
+    """Individual utterance in a conversation with speaker identification"""
+    __tablename__ = "conversation_utterances"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id = Column(UUID(as_uuid=True), ForeignKey('conversation_sessions.id', ondelete='CASCADE'), nullable=False)
+    speaker_id = Column(String(100), nullable=False)  # 'interviewer', 'subject', or custom ID
+    speaker_name = Column(String(255))  # Human-readable speaker name
+    text = Column(Text, nullable=False)  # Transcribed text
+    confidence = Column(String(10))  # Transcription confidence score
+    start_time = Column(String(20))  # Start time in audio (e.g., "00:01:23")
+    end_time = Column(String(20))  # End time in audio
+    duration = Column(Integer)  # Duration in milliseconds
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    audio_segment_path = Column(String(500))  # Path to audio segment file
+    metadata = Column(JSONB, default={})  # Additional utterance metadata
+    
+    # Relationships
+    session = relationship("ConversationSession", back_populates="utterances")
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses"""
+        return {
+            'id': str(self.id),
+            'session_id': str(self.session_id),
+            'speaker_id': self.speaker_id,
+            'speaker_name': self.speaker_name,
+            'text': self.text,
+            'confidence': self.confidence,
+            'start_time': self.start_time,
+            'end_time': self.end_time,
+            'duration': self.duration,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'audio_segment_path': self.audio_segment_path,
+            'metadata': self.metadata
         }
 
 class InterviewTheme(Base):

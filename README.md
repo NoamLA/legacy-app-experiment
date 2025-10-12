@@ -15,6 +15,9 @@ This is a **minimal viable structure** designed for investigating and experiment
 - **👥 Family Collaboration**: Framework for assigning questions to family members
 - **📄 Multiple Outputs**: Transform interviews into narratives, quotes, and structured content
 - **🔄 Progressive Flow**: Guided interview process from seed questions to deep themes
+- **🎙️ Conversation Recording**: Advanced audio recording with automatic speaker separation
+- **📝 Real-time Transcription**: Live speech-to-text with speaker identification and confidence scoring
+- **🎵 Audio Processing**: Voice activity detection, noise suppression, and quality optimization
 
 ## 🏗️ Architecture
 
@@ -84,6 +87,7 @@ legacy/
 - **Theme Detection**: AI's ability to identify meaningful life themes
 - **Response Quality**: How well the system handles various answer types
 - **Export Formats**: Different ways to present the collected stories
+- **Audio Transcription**: Speaker diarization and transcription with evaluation metrics
 
 ## 🔧 Customization Points
 
@@ -99,6 +103,7 @@ legacy/
 - **Database Infrastructure**: PostgreSQL with multi-environment support (CI/Test/Production)
 - **Testing Framework**: Comprehensive test suite with both mocked and real database tests
 - **Real Database Integration**: Docker-based PostgreSQL testing with actual persistence
+- **Audio Transcription**: PyAnnote-Audio 3.1 speaker diarization with evaluation metrics
 - **Repository Organization**: Well-structured codebase with proper documentation
 - **Development Environment**: Optimized InMemoryDb for fast development
 
@@ -131,4 +136,4 @@ Use this lean structure to:
 This foundation provides everything needed to investigate the Legacy Interview App concept while maintaining a clean, extensible codebase.
 
 ---
-**📅 Last Updated:** September 27, 2025
+**📅 Last Updated:** October 12, 2025

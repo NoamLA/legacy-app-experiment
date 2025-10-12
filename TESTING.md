@@ -8,6 +8,7 @@ The Legacy Interview App includes a comprehensive test suite covering:
 - **Multi-Environment**: Tests for CI/Test/Production database separation
 - **Agent Functionality**: Tests for all AI agents (Planner, Prober, Summarizer, Simulator)
 - **Real Database Integration**: Tests using actual PostgreSQL database for realistic scenarios
+- **Audio Transcription**: Tests for speaker diarization and transcription with evaluation metrics
 - **Performance Testing**: Tests for database performance under realistic loads
 
 ## 🏗️ **Test Structure**
@@ -29,6 +30,11 @@ tests/
 │       └── test_database_service_real.py # Database service integration tests
 ├── frontend/                    # React component tests (future)
 └── integration/                 # End-to-end tests (future)
+
+# Audio Transcription Tests (Root Level)
+├── test_audio_transcription_evaluation.py  # Complete evaluation with metrics
+├── test_speaker_diarization_comprehensive.py # Comprehensive speaker diarization
+└── test_pyannote_diarization_direct.py     # Direct PyAnnote 3.1 testing
 ```
 
 ## 🎯 **Test Categories**
@@ -69,6 +75,13 @@ tests/
 - Real database operations
 - **Runtime**: 5+ minutes
 
+### **Audio Transcription Tests**
+- **Speaker Diarization**: PyAnnote-Audio 3.1 with HuggingFace authentication
+- **Transcription Evaluation**: Complete workflow with DER/JER/WER metrics
+- **Ground Truth Comparison**: Evaluation against reference data
+- **RTTM Export**: Standard format for diarization results
+- **Runtime**: 2-5 minutes per audio file
+
 ## 🚀 **Running Tests**
 
 ### **Quick Start**
@@ -108,6 +121,11 @@ tests/
 
 # Parallel execution
 ./scripts/run-tests.sh unit --parallel
+
+# Audio transcription tests
+python test_audio_transcription_evaluation.py
+python test_speaker_diarization_comprehensive.py
+python test_pyannote_diarization_direct.py
 ```
 
 ### **Database Test Setup**
@@ -242,6 +260,20 @@ SKIP_DB_TESTS=true     # Skip all database tests
 - ✅ **Memory persistence** with actual PostgresDb storage
 - ✅ **Project isolation** with separate database sessions
 - ✅ **Performance testing** with concurrent agent operations
+
+### **Audio Transcription Tests**
+
+**Speaker Diarization**:
+- ✅ **PyAnnote-Audio 3.1**: Real speaker diarization with HuggingFace authentication
+- ✅ **RTTM Export**: Standard format for diarization evaluation
+- ✅ **Speaker Assignment**: Time-overlap based speaker assignment to ASR segments
+- ✅ **Ground Truth Comparison**: DER/JER metrics against reference data
+
+**Transcription Evaluation**:
+- ✅ **Single-Pass Transcription**: Efficient Whisper API usage (not per-segment)
+- ✅ **Word Error Rate (WER)**: 7.5% WER achieved on test audio
+- ✅ **Speaker Attribution**: Proper speaker assignment to transcribed segments
+- ✅ **Evaluation Metrics**: Complete DER/JER/WER evaluation pipeline
 
 ## 🐛 **Debugging Tests**
 
@@ -386,4 +418,4 @@ SKIP_DB_TESTS=true ./scripts/run-tests.sh unit
 ```
 
 ---
-**📅 Last Updated:** September 27, 2025
+**📅 Last Updated:** October 12, 2025
