@@ -81,3 +81,5 @@ tmp/
 # Agno specific
 .agno/
 agno.log
+legacy-venv/
+node_modules/
